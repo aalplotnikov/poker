@@ -58,14 +58,15 @@ canvas{display:none}
 <body>
 <div id="setup">
 <h1>🤖 Покер Агент</h1>
-<p style="color:#888;margin:10px 0">Ручной режим с памятью руки</p>
+<p style="color:#888;margin:10px 0">AI помощник для покера с камерой</p>
 <select id="mSel">
+<option value="openai/gpt-5.4-mini">💎 GPT-5.4 Mini (точный!)</option>
 <option value="google/gemini-2.5-flash" selected>⚡ Gemini 2.5 Flash (проверенный)</option>
 <option value="google/gemini-3-flash-preview">🔥 Gemini 3 Flash</option>
+<option value="openai/gpt-5.4">💎💎 GPT-5.4 (ДОРОГОЙ)</option>
 <option value="google/gemma-4-31b-it">🔷 Gemma 4 31B</option>
-<option value="meta-llama/llama-4-scout">🦙 Llama 4 Scout (дешёвый!)</option>
+<option value="meta-llama/llama-4-scout">🦙 Llama 4 Scout (дешёвый)</option>
 <option value="meta-llama/llama-4-maverick">🦙 Llama 4 Maverick</option>
-<option value="meta-llama/llama-3.2-11b-vision-instruct">🦙 Llama 3.2 11B Vision</option>
 <option value="nvidia/nemotron-nano-12b-v2-vl">🟢 Nemotron 12B VL</option>
 <option value="openai/gpt-4o-mini">🔵 GPT-4o-mini</option>
 <option value="openai/gpt-5-nano">🧠 GPT-5 Nano</option>
@@ -75,6 +76,7 @@ canvas{display:none}
 <div class="hint">🔗 polza.ai → Личный кабинет → API Keys</div>
 <button id="startBtn" onclick="save()">🚀 Начать</button>
 </div>
+
 <div id="app">
 <h1>🤖 Покер Агент</h1>
 <div class="tabs">
@@ -82,6 +84,7 @@ canvas{display:none}
 <button class="tab" onclick="tab('p')">👥 Игроки</button>
 <button class="tab" onclick="tab('s')">📊 Сессия</button>
 </div>
+
 <div id="gPg" class="pg active">
 <div class="vid-wrap"><video id="vid" autoplay playsinline muted></video></div>
 <div id="action">Наведи камеру 📸</div>
@@ -94,7 +97,9 @@ canvas{display:none}
 <button id="newHand" onclick="newHand()">🔄 НОВАЯ РУКА</button>
 <div id="total"></div>
 </div>
+
 <div id="pPg" class="pg"><div id="pList"></div></div>
+
 <div id="sPg" class="pg">
 <div class="ss">
 <div class="si"><div class="v" id="sH">0</div><div class="l">Рук</div></div>
@@ -105,13 +110,15 @@ canvas{display:none}
 </div>
 <h3 style="margin:15px 0 10px;color:#aaa">История</h3>
 <div id="hist"></div>
-<button onclick="reset()" style="background:#3a1a1a;color:#f66;font-size:14px;padding:12px;margin-top:20px;width:85%">🗑 Сбросить</button>
+<button onclick="reset()" style="background:#3a1a1a;color:#f66;font-size:14px;padding:12px;margin-top:20px;width:85%">🗑 Сбросить всё</button>
 </div>
+
 <button id="settBtn" onclick="showSetup()">⚙️ Настройки</button>
 </div>
 <canvas id="cvs"></canvas>
+
 <script>
-var G={m:ls('m')||'google/gemini-2.5-flash-preview',k:ls('k')||''};
+var G={m:ls('m')||'google/gemini-2.5-flash',k:ls('k')||''};
 var HI=jp('hi')||[],TS=+ls('ts')||0,HP=+ls('hp')||0,TT=+ls('tt')||0;
 var DB=jp('db')||{};
 var HAND=[];
@@ -125,66 +132,82 @@ function isReasoning(m){
     return m.indexOf('gpt-5')!==-1||
            m.indexOf('o4-')!==-1||
            m.indexOf('o3-')!==-1||
-           m.indexOf('o1-')!==-1||
-           (m.indexOf('/o3')!==-1&&m.indexOf('o3-')!==-1)||
-           (m.indexOf('/o1')!==-1&&m.indexOf('o1-')!==-1);
+           m.indexOf('o1-')!==-1;
 }
 
-var SYS=`Ты покерный помощник. Анализируй скриншот PokerOK.
+var SYS=`Анализируй скриншот покерного стола PokerOK.
 
-ШАГ 1 — НАЙДИ КАРТЫ ГЕРОЯ:
-Герой сидит ВНИЗУ ЦЕНТР экрана. Его 2 карты самые крупные внизу рядом с его ником.
-Прочитай ВНИМАТЕЛЬНО номинал и масть каждой карты.
-НЕ ПУТАЙ с картами других игроков!
-Если карт НЕ ВИДНО — напиши "не видны". НЕ ВЫДУМЫВАЙ!
+!!! КРИТИЧНО: если на скриншоте НЕТ покерного стола — ответь только: НЕТ ПОКЕРНОГО СТОЛА
+!!! НЕ ВЫДУМЫВАЙ карты которых не видишь!
 
-ШАГ 2 — НАЙДИ БОРД:
-Общие карты в ЦЕНТРЕ стола. Если нет — ПРЕФЛОП.
-3 карты = ФЛОП. 4 = ТЁРН. 5 = РИВЕР.
+ЧТЕНИЕ СКРИНШОТА:
 
-ШАГ 3 — НАЙДИ ПОЗИЦИЮ ГЕРОЯ:
-Кнопка "D" стоит у ОДНОГО игрока — он BTN.
-По часовой от D: BTN→SB→BB→UTG→UTG1→MP→MP2→HJ→CO
+1. ГЕРОЙ — игрок ВНИЗУ экрана (самые крупные карты). Прочитай номинал и масть.
+   Масти: ♠(чёрные пики) ♣(чёрные крести) ♥(красные черви) ♦(красные бубны)
+   Если не видишь карты чётко — напиши "не видны". НЕ ВЫДУМЫВАЙ.
 
-ШАГ 4 — ДЕЙСТВИЕ:
+2. БОРД — общие карты в ЦЕНТРЕ стола. Нет карт = префлоп.
 
-!!! ФОЛД ЗАПРЕЩЁН когда нет ставки перед нами !!!
-- BB и никто не рейзил → ЧЕК
-- Постфлоп никто не бетил → ЧЕК или БЕТ
-- ФОЛД только когда ЕСТЬ чужая ставка и слабая рука
+3. ПОЗИЦИЯ — найди жёлтую кнопку "D" на столе.
+   D = BTN. Далее по часовой: SB → BB → UTG → MP → HJ → CO → BTN.
+   Определи где герой относительно D.
 
-ПРЕФЛОП ОТКРЫТИЕ (никто не рейзил) РЕЙЗ 2.5ББ:
-UTG: 77+, AJs+, KQs, AQo+
-MP: 55+, A9s+, KTs+, QTs+, JTs, T9s, AJo+, KQo
-HJ: 33+, A2s+, K5s+, Q8s+, J8s+, T8s+, 97s+, 87s, 76s, 65s, A9o+, KTo+, QTo+, JTo
-CO: 22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A2o+, K9o+, Q9o+, J9o+, T9o
-BTN: 22+, A2s+, K2s+, Q2s+, J4s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o
-SB: 22+, A2s+, K2s+, Q4s+, J7s+, T7s+, 96s+, 86s+, A2o+, K7o+, Q9o+, J9o+
+4. ДЕЙСТВИЯ — прочитай ставки и кнопки (Фолд/Колл/Рейз).
+   Кто лимпнул? Кто рейзил? Кто олл-ин? Размер ставки?
 
-VS РЕЙЗ: 3-бет AA-QQ,AK. Колл пары,suited коннекторы в позиции. Фолд мусор.
+5. СТЕКИ — стек героя и оппонентов в ББ.
+
+ПРИНЯТИЕ РЕШЕНИЯ:
+
+ПРЕФЛОП БЕЗ РЕЙЗА (открытие или vs лимп):
+- Премиум (AA,KK,QQ,AKs,AKo): РЕЙЗ 3ББ
+- Сильные (JJ-99,AQs,AQo,AJs,KQs): РЕЙЗ 2.5ББ
+- Средние (88-22,ATs-A2s,KJs-KTs,QJs,JTs,T9s,98s,87s,76s): РЕЙЗ 2.5ББ с CO/BTN/SB, иначе ФОЛД
+- Слабые (K9o-,Q9o-,J8o-,несвязанные): ФОЛД
+- T8o,T7o,T6o = ФОЛД из любой позиции (слишком слабая)
+
+ПРЕФЛОП VS РЕЙЗ:
+- AA,KK: РЕЙЗ (3-бет)
+- QQ,AKs,AKo: РЕЙЗ или КОЛЛ
+- JJ-99,AQs: КОЛЛ
+- Мелкие пары, suited коннекторы: КОЛЛ в позиции если дёшево
+- Остальное: ФОЛД
+
+ПРЕФЛОП VS 3-БЕТ:
+- AA,KK: РЕЙЗ (4-бет)
+- QQ,AKs: КОЛЛ
+- Остальное: ФОЛД
+
+!!! ОЛИН ТОЛЬКО: AA,KK и стек <15ББ. НИКОГДА олин с чем-то другим !!!
 
 ПОСТФЛОП:
-Топ пара+, сет → БЕТ 50-75% пота
-Дро → БЕТ 33%
-Воздух → ЧЕК, фолд на чужой бет
+- Нет чужой ставки → ЧЕК или БЕТ. ФОЛД ЗАПРЕЩЁН без чужой ставки!
+- Сет+, два пары, натс: БЕТ 66-75% банка
+- Топ пара хороший кикер: БЕТ 50% банка
+- Флеш-дро/стрит-дро 8+ аутов: БЕТ 33% банка
+- Средняя пара, слабый кикер: ЧЕК-КОЛЛ
+- Воздух без дро: ЧЕК, ФОЛД на ставку
+- VS крупная ставка: КОЛЛ с топ парой+, ФОЛД без попадания
 
-МАСТИ: ♠♥♦♣
+ФОРМАТ ОТВЕТА — РОВНО 4 СТРОКИ:
 
-ОТВЕТ СТРОГО 3 СТРОКИ:
-РУКА: [карты] | БОРД: [карты/нет] | [позиция]
-[ФОЛД/КОЛЛ/РЕЙЗ ХББ/БЕТ ХББ/ЧЕК]
-ИГРОКИ: [ник=FISH/REG/UNKNOWN]`;
+РУКА: [карты героя] | БОРД: [карты или нет]
+ПОЗИЦИЯ: [позиция] | БАНК: [X ББ] | СТЕК: [X ББ] | СИТУАЦИЯ: [кратко]
+ДЕЙСТВИЕ: [ФОЛД/КОЛЛ/ЧЕК/РЕЙЗ X ББ/БЕТ X ББ]
+ИГРОКИ: [ник=тип через запятую]
+
+Типы игроков: FISH(лимпит,минрейзит,странные линии) REG(стандартные размеры,позиционная игра) UNKNOWN(мало данных)`;
 
 function mkCtx(){
     var k='';
     var n=Object.keys(DB);
-    if(n.length>0){k+='\nИзвестные:';for(var x of n)k+=' '+x+'='+DB[x].t;}
+    if(n.length>0){k+='\nИзвестные игроки:';for(var x of n)k+=' '+x+'='+DB[x].t;}
     if(HAND.length>0){
-        k+='\n\nТЕКУЩАЯ РУКА:';
+        k+='\n\nИСТОРИЯ ТЕКУЩЕЙ РУКИ:';
         for(var i=0;i<HAND.length;i++)k+='\nУлица '+(i+1)+': '+HAND[i].cards+' → '+HAND[i].action;
-        k+='\nНовая улица. Учитывай историю!';
+        k+='\nСейчас новая улица. Учитывай историю руки!';
     }
-    return k+'\nАнализируй скриншот. ТОЛЬКО 3 СТРОКИ!';
+    return k+'\nАнализируй скриншот. СТРОГО 4 СТРОКИ!';
 }
 
 function init(){
@@ -237,12 +260,18 @@ function snap(){
     var outH=Math.round(vh*scale);
     cvs.width=outW;cvs.height=outH;
     cvs.getContext('2d').drawImage(vid,0,0,outW,outH);
-    return cvs.toDataURL('image/jpeg',0.6).split(',')[1];
+    return cvs.toDataURL('image/jpeg',0.7).split(',')[1];
 }
 
 async function api(b){
     var ms=[];
-    ms.push({role:'system',content:SYS});
+
+    if(isReasoning(G.m)){
+        ms.push({role:'developer',content:SYS});
+    }else{
+        ms.push({role:'system',content:SYS});
+    }
+
     ms.push({role:'user',content:[{type:'text',text:mkCtx()},
     {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'high'}}]});
 
@@ -250,9 +279,9 @@ async function api(b){
 
     if(isReasoning(G.m)){
         body.max_tokens=16000;
-        body.reasoning={effort:'minimal',exclude:true};
+        body.reasoning={effort:'low',exclude:true};
     }else{
-        body.max_tokens=200;
+        body.max_tokens=300;
     }
 
     var r=await fetch('https://polza.ai/api/v1/chat/completions',{
@@ -313,7 +342,7 @@ function toggleAuto(){
     autoOn=!autoOn;
     var btn=document.getElementById('autoBtn');
     if(autoOn){
-        btn.textContent='⏸ СТОП';btn.style.background='#4f4';btn.style.color='#000';
+        btn.textContent='⏸ СТОП АВТО';btn.style.background='#4f4';btn.style.color='#000';
         autoLoop();
     }else{
         btn.textContent='▶ АВТО (5с)';btn.style.background='#333';btn.style.color='#fa0';
@@ -354,48 +383,67 @@ async function go(){
     var crd=document.getElementById('cards');
     var strt=document.getElementById('street');
     var inf=document.getElementById('info');
-    btn.disabled=true;btn.textContent='⏳ ...';
+    btn.disabled=true;btn.textContent='⏳ Думаю...';
     act.textContent='⏳';act.className='';
     crd.textContent='';strt.textContent='';inf.textContent='';
     try{
         var b=snap();
-        if(!b)throw new Error('Нет видео');
+        if(!b)throw new Error('Нет видео — разреши камеру');
         var t0=Date.now();
         var r=await api(b);
         var a=r.txt,el=((Date.now()-t0)/1000).toFixed(1);
         TS+=r.cost;TT+=+el;
         ls('ts',TS);ls('tt',TT);
-        pP(a);
         console.log('ОТВЕТ:',a);
 
+        // Проверка — нет стола
+        if(a.toUpperCase().includes('НЕТ ПОКЕРНОГО СТОЛА')||
+           a.toUpperCase().includes('НЕ ВИЖУ ПОКЕР')||
+           a.toUpperCase().includes('НЕ ПОКЕРН')){
+            act.textContent='❌ Нет стола';
+            act.className='';
+            inf.textContent='⚡'+el+'s | Наведи камеру на покерный стол!';
+            btn.disabled=false;btn.textContent='📸 АНАЛИЗ';
+            return;
+        }
+
+        pP(a);
+
         var lines=a.split('\n').filter(function(l){return l.trim()});
-        var handLine='',actionRaw='';
+        var handLine='',sitLine='',actionRaw='';
         for(var i=0;i<lines.length;i++){
             var u=lines[i].toUpperCase();
             if(u.includes('РУКА')||u.includes('БОРД'))handLine=lines[i];
-            else if(!actionRaw&&(u.includes('ФОЛД')||u.includes('FOLD')||
-            u.includes('КОЛЛ')||u.includes('CALL')||u.includes('РЕЙЗ')||
-            u.includes('RAISE')||u.includes('БЕТ')||u.includes('BET')||
-            u.includes('ЧЕК')||u.includes('CHECK')||u.includes('ОЛИН')||
-            u.includes('ALL')))actionRaw=lines[i];
+            else if(u.includes('ПОЗИЦИЯ')||u.includes('СИТУАЦИЯ'))sitLine=lines[i];
+            else if(u.includes('ДЕЙСТВИЕ'))actionRaw=lines[i];
+        }
+        if(!actionRaw){
+            for(var i=0;i<lines.length;i++){
+                var u=lines[i].toUpperCase();
+                if(u.includes('ФОЛД')||u.includes('FOLD')||
+                u.includes('КОЛЛ')||u.includes('CALL')||u.includes('РЕЙЗ')||
+                u.includes('RAISE')||u.includes('БЕТ')||u.includes('BET')||
+                u.includes('ЧЕК')||u.includes('CHECK')||u.includes('ОЛИН')||
+                u.includes('ALL')){actionRaw=lines[i];break;}
+            }
         }
 
         var src=(actionRaw||a).toUpperCase(),ac='',dsp='',voice='';
-        if(src.includes('ОЛИН')||src.includes('ALL-IN')||src.includes('ALL IN')||src.includes('ОЛЛ')){
+        if(src.includes('ОЛИН')||src.includes('ALL-IN')||src.includes('ALL IN')||src.includes('ОЛЛ-ИН')){
             ac='raise';dsp='ОЛИН 🔥🔥🔥';voice='Олын';
         }
         else if(src.includes('ФОЛД')||src.includes('FOLD')){
             ac='fold';dsp='ФОЛД ❌';voice='Фолд';
         }
         else if(src.includes('РЕЙЗ')||src.includes('RAISE')){
-            ac='raise';var m=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
-            dsp=m?'РЕЙЗ '+m[1]+' ББ 🔥':'РЕЙЗ 🔥';
-            voice=m?'Рейз '+m[1]:'Рейз';
+            ac='raise';var m2=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
+            dsp=m2?'РЕЙЗ '+m2[1]+' ББ 🔥':'РЕЙЗ 🔥';
+            voice=m2?'Рейз '+m2[1]:'Рейз';
         }
         else if(src.includes('БЕТ')||src.includes('BET')){
-            ac='raise';var m=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
-            dsp=m?'БЕТ '+m[1]+' ББ 🔥':'БЕТ 🔥';
-            voice=m?'Бет '+m[1]:'Бет';
+            ac='raise';var m3=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
+            dsp=m3?'БЕТ '+m3[1]+' ББ 🔥':'БЕТ 🔥';
+            voice=m3?'Бет '+m3[1]:'Бет';
         }
         else if(src.includes('КОЛЛ')||src.includes('CALL')){
             ac='call';dsp='КОЛЛ ✅';voice='Колл';
@@ -403,12 +451,13 @@ async function go(){
         else if(src.includes('ЧЕК')||src.includes('CHECK')){
             ac='check';dsp='ЧЕК 🔵';voice='Чек';
         }
-        else{ac='';dsp=a.substring(0,60);voice='Не понял';}
+        else{ac='';dsp=a.substring(0,60);voice='';}
 
+        // Определяем улицу
         var streetName='';
         if(handLine){
             var bu=handLine.toUpperCase();
-            if(bu.includes('НЕТ'))streetName='ПРЕФЛОП';
+            if(bu.includes('НЕТ')||bu.includes('ПРЕФЛОП'))streetName='ПРЕФЛОП';
             else{
                 var bIdx=bu.indexOf('БОРД');
                 if(bIdx===-1)streetName='ПРЕФЛОП';
@@ -423,38 +472,46 @@ async function go(){
             }
         }
 
+        // Позиция
         var pos='';
-        var posMatch=(handLine||a).match(/(BTN|SB|BB|UTG\+?1?|MP\d?|HJ|CO)/i);
+        var posMatch=(sitLine||a).match(/(UTG|MP|HJ|CO|BTN|SB|BB|BUTTON|DEALER)/i);
         if(posMatch)pos=posMatch[1].toUpperCase();
-
-        HAND.push({cards:handLine||'?',action:dsp,street:streetName});
-        uMem();
 
         act.textContent=dsp;act.className=ac;
         crd.textContent=handLine||'';
-        strt.textContent=(pos?'👤 '+pos+' | ':'')+(streetName?'📍 '+streetName:'')+(HAND.length>1?' (улица '+HAND.length+')':'');
-        inf.textContent='💰'+r.cost.toFixed(3)+'₽ | '+r.tok+'tok | ⚡'+el+'s';
-        document.getElementById('total').textContent='💳 Всего: '+TS.toFixed(2)+'₽ | Рук: '+HP;
+        strt.textContent=(streetName?'🎴 '+streetName:'')+(pos?' | 📍 '+pos:'');
+        inf.textContent='⚡'+el+'s | '+r.tok+' tok | '+r.cost.toFixed(3)+'₽ | '+G.m.split('/')[1];
 
         speak(voice);
 
-        if(navigator.vibrate){
-            if(ac==='fold')navigator.vibrate(200);
-            else if(ac==='raise')navigator.vibrate([100,50,100,50,100]);
-            else if(ac==='call')navigator.vibrate(100);
-            else navigator.vibrate(50);
-        }
+        // Сохраняем в историю руки
+        HAND.push({cards:handLine||'?',action:dsp});
+        uMem();
 
-        HI.unshift({d:dsp,h:handLine||'',e:el,s:streetName,p:pos,
-            n:new Date().toLocaleTimeString(),c:r.cost});
-        if(HI.length>50)HI.pop();
+        // Сохраняем в историю сессии
+        HI.unshift({
+            d:new Date().toLocaleTimeString(),
+            h:handLine||'?',
+            p:pos||'?',
+            s:streetName||'?',
+            a:dsp,
+            n:sitLine||'',
+            e:el,
+            c:r.cost
+        });
+        if(HI.length>50)HI.length=50;
         ls('hi',JSON.stringify(HI));
-        uSS();
+        ls('ts',TS);ls('tt',TT);
+
+        document.getElementById('total').textContent=
+            '💰 Всего: '+TS.toFixed(3)+'₽ | 📊 '+HP+' рук | ⚡ '+(HP>0?(TT/HP).toFixed(1):'0')+'s/руку';
+
+        uSS();rP();
 
     }catch(e){
-        act.textContent='❌';act.className='';
+        act.textContent='⚠️ Ошибка';act.className='';
         inf.textContent=e.message;
-        console.log('ОШИБКА:',e);
+        console.error(e);
     }
     btn.disabled=false;btn.textContent='📸 АНАЛИЗ';
 }
@@ -469,11 +526,12 @@ function uSS(){
     document.getElementById('hist').innerHTML=HI.map(function(i){
         return '<div class="hi"><b>'+i.d+'</b>'+(i.p?' <span style="color:#4af">'+i.p+'</span>':'')+
         (i.s?' <span style="color:#fa0">'+i.s+'</span>':'')+
+        (i.a?' <span style="font-size:14px;font-weight:700">'+i.a+'</span>':'')+
         '<br>'+i.h+'<br>'+i.n+' | ⚡'+i.e+'s | '+i.c.toFixed(3)+'₽</div>';}).join('');
 }
 
 function reset(){
-    if(!confirm('Сбросить всё?'))return;
+    if(!confirm('Сбросить все данные?'))return;
     TS=HP=TT=0;HI=[];DB={};HAND=[];
     ['ts','hp','tt','hi','db'].forEach(function(k){localStorage.removeItem(k)});
     uSS();rP();uMem();
@@ -481,6 +539,7 @@ function reset(){
     document.getElementById('action').className='';
     document.getElementById('cards').textContent='';
     document.getElementById('street').textContent='';
+    document.getElementById('total').textContent='';
 }
 
 init();
