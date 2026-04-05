@@ -52,7 +52,6 @@ display:flex;align-items:center;justify-content:center}
 #stats{position:absolute;top:50px;left:10px;font-size:10px;color:#666;z-index:10;
 background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:6px;pointer-events:none}
 
-/* Settings Panel */
 #settingsPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
 background:rgba(0,0,0,0.8);justify-content:center;align-items:center}
 #settingsPanel.open{display:flex}
@@ -75,7 +74,6 @@ background:#fff;border-radius:50%;transition:0.2s}
 #closeSettings{width:100%;padding:12px;border:none;border-radius:10px;
 background:#e94560;color:#fff;font-size:16px;cursor:pointer;margin-top:10px}
 
-/* History */
 #historyPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
 background:rgba(0,0,0,0.8)}
 #historyPanel.open{display:flex;flex-direction:column}
@@ -92,72 +90,71 @@ canvas{display:none}
 <body>
 
 <div id="topBar">
-    <div class="left">
-        <button class="topBtn" onclick="toggleHistory()" title="История">📋</button>
-        <span id="modelName">gpt-5-nano</span>
-    </div>
-    <div class="right">
-        <button class="topBtn" id="voiceBtn" onclick="toggleVoice()" title="Озвучка">🔇</button>
-        <button class="topBtn" onclick="switchCam()" title="Камера">🔄</button>
-        <button class="topBtn" onclick="openSettings()" title="Настройки">⚙️</button>
-    </div>
+<div class="left">
+<button class="topBtn" onclick="toggleHistory()">📋</button>
+<span id="modelName">gpt-5-nano</span>
+</div>
+<div class="right">
+<button class="topBtn" id="voiceBtn" onclick="toggleVoice()">🔇</button>
+<button class="topBtn" onclick="switchCam()">🔄</button>
+<button class="topBtn" onclick="openSettings()">⚙️</button>
+</div>
 </div>
 
 <div id="cameraBox">
-    <video id="vid" autoplay playsinline muted></video>
-    <div id="crosshair"></div>
-    <div id="flash"></div>
-    <div id="stats"></div>
-    <div id="responseBox"><div id="responseText"></div></div>
+<video id="vid" autoplay playsinline muted></video>
+<div id="crosshair"></div>
+<div id="flash"></div>
+<div id="stats"></div>
+<div id="responseBox"><div id="responseText"></div></div>
 </div>
 
 <div id="bottomBar">
-    <button class="sideBtn" onclick="clearChat()">🗑</button>
-    <button id="snapBtn" onclick="snap()">📸</button>
-    <button class="sideBtn" onclick="repeatSpeak()">🔊</button>
+<button class="sideBtn" onclick="clearChat()">🗑</button>
+<button id="snapBtn" onclick="snap()">📸</button>
+<button class="sideBtn" onclick="repeatSpeak()">🔊</button>
 </div>
 
-<!-- Settings -->
 <div id="settingsPanel">
 <div id="settingsInner">
-    <h2>⚙️ Настройки</h2>
-    <div class="sGroup">
-        <label>API ключ (Polza.ai)</label>
-        <input type="password" id="apiKey" placeholder="sk-...">
-    </div>
-    <div class="sGroup">
-        <label>Модель</label>
-        <select id="modelSelect">
-            <option value="openai/gpt-5-nano">GPT-5 Nano ⚡</option>
-            <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
-            <option value="openai/gpt-4.1-nano">GPT-4.1 Nano</option>
-            <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
-        </select>
-    </div>
-    <div class="sGroup">
-        <label>Reasoning effort</label>
-        <select id="reasoningEffort">
-            <option value="minimal">Minimal (быстро)</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High (медленно)</option>
-        </select>
-    </div>
-    <div class="sGroup">
-        <label>Качество фото</label>
-        <select id="photoQuality">
-            <option value="256">256px (быстро)</option>
-            <option value="512" selected>512px (баланс)</option>
-            <option value="768">768px (чётко)</option>
-        </select>
-    </div>
-    <div class="sGroup sRow">
-        <label>Озвучка</label>
-        <button class="toggle" id="ttsToggle" onclick="this.classList.toggle('on');saveSettings()"></button>
-    </div>
-    <div class="sGroup">
-        <label>Системный промпт</label>
-        <textarea id="sysPrompt">Ты — покерный ассистент. Анализируй фото покерного стола.
+<h2>⚙️ Настройки</h2>
+<div class="sGroup">
+<label>API ключ (Polza.ai)</label>
+<input type="password" id="apiKey" placeholder="sk-...">
+</div>
+<div class="sGroup">
+<label>Модель</label>
+<select id="modelSelect">
+<option value="openai/gpt-5-nano">GPT-5 Nano ⚡</option>
+<option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+<option value="openai/gpt-4.1-nano">GPT-4.1 Nano</option>
+<option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+</select>
+</div>
+<div class="sGroup">
+<label>Reasoning effort</label>
+<select id="reasoningEffort">
+<option value="minimal">Minimal (быстро)</option>
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high">High (медленно)</option>
+</select>
+</div>
+<div class="sGroup">
+<label>Качество фото</label>
+<select id="photoQuality">
+<option value="256">256px (быстро)</option>
+<option value="512" selected>512px (баланс)</option>
+<option value="768">768px (чётко)</option>
+</select>
+</div>
+<div class="sGroup sRow">
+<label>Озвучка</label>
+<button class="toggle" id="ttsToggle" onclick="this.classList.toggle('on');saveSettings()"></button>
+</div>
+<div class="sGroup">
+<label>Системный промпт</label>
+<textarea id="sysPrompt">Ты — покерный ассистент. Анализируй фото покерного стола.
 
 ОБЯЗАТЕЛЬНО определи и укажи:
 1. Мои карты (Hero)
@@ -171,16 +168,15 @@ canvas{display:none}
 - Краткое объяснение почему
 
 Отвечай КОРОТКО — максимум 3-4 строки. Только суть!</textarea>
-    </div>
-    <button id="closeSettings" onclick="closeSettings()">Сохранить ✓</button>
+</div>
+<button id="closeSettings" onclick="closeSettings()">Сохранить ✓</button>
 </div>
 </div>
 
-<!-- History -->
 <div id="historyPanel">
 <div id="historyHeader">
-    <h3>📋 История</h3>
-    <button class="topBtn" onclick="toggleHistory()">✕</button>
+<h3>📋 История</h3>
+<button class="topBtn" onclick="toggleHistory()">✕</button>
 </div>
 <div id="historyList"></div>
 </div>
@@ -188,18 +184,13 @@ canvas{display:none}
 <canvas id="cvs"></canvas>
 
 <script>
-// ===== STATE =====
-var S={
-    key:'',model:'openai/gpt-5-nano',effort:'minimal',
-    quality:512,voice:false,prompt:'',facingMode:'environment'
-};
-var history=[];
+var S={key:'',model:'openai/gpt-5-nano',effort:'minimal',quality:512,voice:false,prompt:'',facingMode:'environment'};
+var hist=[];
 var chatMessages=[];
 var lastAnswer='';
 var busy=false;
-var stream=null;
+var camStream=null;
 
-// ===== INIT =====
 loadSettings();
 startCam();
 
@@ -213,7 +204,6 @@ function loadSettings(){
         if(s.voice!==undefined)S.voice=s.voice;
         if(s.prompt)S.prompt=s.prompt;
     }catch(e){}
-
     document.getElementById('apiKey').value=S.key;
     document.getElementById('modelSelect').value=S.model;
     document.getElementById('reasoningEffort').value=S.effort;
@@ -222,8 +212,6 @@ function loadSettings(){
     if(S.voice)document.getElementById('ttsToggle').classList.add('on');
     updateVoiceBtn();
     document.getElementById('modelName').textContent=S.model.split('/')[1];
-
-    // load prompt if empty
     if(!S.prompt)S.prompt=document.getElementById('sysPrompt').value;
 }
 
@@ -242,16 +230,15 @@ function saveSettings(){
 function openSettings(){document.getElementById('settingsPanel').classList.add('open')}
 function closeSettings(){saveSettings();document.getElementById('settingsPanel').classList.remove('open')}
 
-// ===== CAMERA =====
 async function startCam(){
     try{
-        if(stream){stream.getTracks().forEach(function(t){t.stop()});}
-        stream=await navigator.mediaDevices.getUserMedia({
+        if(camStream){camStream.getTracks().forEach(function(t){t.stop()});}
+        camStream=await navigator.mediaDevices.getUserMedia({
             video:{facingMode:S.facingMode,width:{ideal:1280},height:{ideal:720}}
         });
-        document.getElementById('vid').srcObject=stream;
+        document.getElementById('vid').srcObject=camStream;
     }catch(e){
-        showResponse('❌ Камера недоступна: '+e.message);
+        showResponse('❌ Камера: '+e.message);
     }
 }
 
@@ -260,7 +247,6 @@ function switchCam(){
     startCam();
 }
 
-// ===== CAPTURE =====
 function capture(){
     var vid=document.getElementById('vid');
     var cvs=document.getElementById('cvs');
@@ -280,11 +266,9 @@ function flashEffect(){
     setTimeout(function(){f.style.transition='opacity 0.3s';f.style.opacity='0';},50);
 }
 
-// ===== API =====
 async function snap(){
     if(busy)return;
     if(!S.key){openSettings();return;}
-
     var img=capture();
     if(!img){showResponse('❌ Нет видео');return;}
 
@@ -294,17 +278,10 @@ async function snap(){
     btn.classList.add('loading');btn.textContent='⏳';
     showResponse('⏳ Анализирую...');
 
-    // build messages
     var msgs=[];
-    if(S.prompt){
-        msgs.push({role:'system',content:S.prompt});
-    }
-    // add last 2 exchanges for context
+    if(S.prompt){msgs.push({role:'system',content:S.prompt});}
     var recent=chatMessages.slice(-4);
-    for(var i=0;i<recent.length;i++){
-        msgs.push(recent[i]);
-    }
-    // current photo
+    for(var i=0;i<recent.length;i++){msgs.push(recent[i]);}
     msgs.push({
         role:'user',
         content:[
@@ -314,19 +291,14 @@ async function snap(){
     });
 
     var t0=Date.now();
-
     try{
         var body={
             model:S.model,
             messages:msgs,
             max_tokens:16000,
-            reasoning:{
-                effort:S.effort,
-                exclude:true
-            }
+            reasoning:{effort:S.effort,exclude:true}
         };
 
-        // non-reasoning models
         if(S.model.indexOf('4o-mini')!==-1||S.model.indexOf('4.1-nano')!==-1){
             delete body.reasoning;
             body.max_tokens=500;
@@ -342,10 +314,7 @@ async function snap(){
         var elapsed=((Date.now()-t0)/1000).toFixed(1);
         console.log('API:',JSON.stringify(d,null,2));
 
-        if(d.error){
-            showResponse('❌ '+d.error.message);
-            done();return;
-        }
+        if(d.error){showResponse('❌ '+d.error.message);done();return;}
 
         var answer='';
         if(d.choices&&d.choices[0]&&d.choices[0].message){
@@ -353,23 +322,18 @@ async function snap(){
         }
 
         if(!answer){
-            var u=d.usage||{};
-            var rd=u.completion_tokens_details||{};
-            showResponse('⚠️ Пустой ответ\nout:'+u.completion_tokens+
-                ' reasoning:'+(rd.reasoning_tokens||'?')+
-                '\nfinish:'+d.choices[0].finish_reason+
-                '\nПопробуй увеличить reasoning effort');
+            showResponse('⚠️ Пустой ответ. finish:'+
+                (d.choices&&d.choices[0]?d.choices[0].finish_reason:'?')+
+                '\nПопробуй увеличить effort в настройках');
             done();return;
         }
 
-        // save to chat
         chatMessages.push({role:'user',content:'[фото покерного стола]'});
         chatMessages.push({role:'assistant',content:answer});
         if(chatMessages.length>10)chatMessages=chatMessages.slice(-10);
 
-        // save to history
         var u=d.usage||{};
-        history.push({
+        hist.push({
             time:new Date().toLocaleTimeString(),
             answer:answer,
             tokens:u.total_tokens||0,
@@ -377,23 +341,16 @@ async function snap(){
             elapsed:elapsed
         });
 
-        // stats
-        var rd=u.completion_tokens_details||{};
         document.getElementById('stats').textContent=
-            '⚡'+elapsed+'s | 🔢'+(u.completion_tokens||'?')+
-            'tok | 💰'+(u.cost_rub||u.cost||'?')+'₽';
+            '⚡'+elapsed+'s | 🔢'+(u.completion_tokens||'?')+'tok | 💰'+(u.cost_rub||u.cost||'?')+'₽';
 
         lastAnswer=answer;
         showResponse(answer);
-
-        // speak
         if(S.voice)speak(answer);
 
     }catch(e){
         showResponse('❌ Ошибка: '+e.message);
-        console.error(e);
     }
-
     done();
 }
 
@@ -403,10 +360,7 @@ function done(){
     btn.classList.remove('loading');btn.textContent='📸';
 }
 
-// ===== UI =====
-function showResponse(text){
-    document.getElementById('responseText').textContent=text;
-}
+function showResponse(text){document.getElementById('responseText').textContent=text;}
 
 function clearChat(){
     chatMessages=[];
@@ -414,7 +368,6 @@ function clearChat(){
     document.getElementById('stats').textContent='';
 }
 
-// ===== VOICE =====
 function toggleVoice(){
     S.voice=!S.voice;
     updateVoiceBtn();
@@ -434,24 +387,18 @@ function speak(text){
     u.lang='ru-RU';u.rate=1.1;u.pitch=1.0;
     var voices=window.speechSynthesis.getVoices();
     for(var i=0;i<voices.length;i++){
-        if(voices[i].lang&&voices[i].lang.indexOf('ru')!==-1){
-            u.voice=voices[i];break;
-        }
+        if(voices[i].lang&&voices[i].lang.indexOf('ru')!==-1){u.voice=voices[i];break;}
     }
     window.speechSynthesis.speak(u);
 }
 
-function repeatSpeak(){
-    if(lastAnswer)speak(lastAnswer);
-}
+function repeatSpeak(){if(lastAnswer)speak(lastAnswer);}
 
-// preload voices
 if(window.speechSynthesis){
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
 }
 
-// ===== HISTORY =====
 function toggleHistory(){
     document.getElementById('historyPanel').classList.toggle('open');
     renderHistory();
@@ -459,10 +406,10 @@ function toggleHistory(){
 
 function renderHistory(){
     var list=document.getElementById('historyList');
-    if(!history.length){list.innerHTML='<p style="text-align:center;color:#666;padding:40px">Пусто</p>';return;}
+    if(!hist.length){list.innerHTML='<p style="text-align:center;color:#666;padding:40px">Пусто</p>';return;}
     var html='';
-    for(var i=history.length-1;i>=0;i--){
-        var h=history[i];
+    for(var i=hist.length-1;i>=0;i--){
+        var h=hist[i];
         html+='<div class="histItem">'+
             '<div class="time">'+h.time+' | ⚡'+h.elapsed+'s | 💰'+h.cost+'₽</div>'+
             '<div class="msg">'+h.answer.replace(/</g,'&lt;')+'</div></div>';
@@ -470,7 +417,6 @@ function renderHistory(){
     list.innerHTML=html;
 }
 
-// ===== KEYBOARD SHORTCUT =====
 document.addEventListener('keydown',function(e){
     if(e.code==='Space'&&!document.getElementById('settingsPanel').classList.contains('open')){
         e.preventDefault();snap();
