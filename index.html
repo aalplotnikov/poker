@@ -17,7 +17,7 @@ canvas{display:none}
 </style>
 </head>
 <body>
-<h2>🧪 Nano reasoning:none</h2>
+<h2>🧪 Nano — minimal reasoning</h2>
 <input type="password" id="key" placeholder="API ключ">
 <video id="v" autoplay playsinline muted></video>
 <br>
@@ -50,13 +50,13 @@ async function go(){
                 messages:[{
                     role:'user',
                     content:[
-                        {type:'text',text:'Что на фото? Одно предложение.'},
+                        {type:'text',text:'Что на фото? Ответь ОДНИМ предложением. Коротко!'},
                         {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}
                     ]
                 }],
-                max_tokens:300,
+                max_tokens:16000,
                 reasoning:{
-                    effort:'none',
+                    effort:'minimal',
                     exclude:true
                 }
             })
@@ -75,10 +75,9 @@ async function go(){
         var rd=u.completion_tokens_details||{};
         r.textContent=
             '⚡ '+el+'s\n'+
-            '🔢 Токены: '+(u.total_tokens||'?')+
-            ' (in:'+(u.prompt_tokens||'?')+
-            ' out:'+(u.completion_tokens||'?')+
-            ' reason:'+(rd.reasoning_tokens||0)+')\n'+
+            '🔢 out:'+(u.completion_tokens||'?')+
+            ' reason:'+(rd.reasoning_tokens||'?')+
+            ' answer:'+(u.completion_tokens-(rd.reasoning_tokens||0))+'\n'+
             '💰 '+(u.cost_rub||u.cost||'?')+'₽\n'+
             'finish: '+(d.choices&&d.choices[0]?d.choices[0].finish_reason:'?')+'\n'+
             '─────────\n'+answer;
