@@ -1,90 +1,481 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nano fix</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>♠ Poker Agent</title>
 <style>
-body{background:#111;color:#fff;font-family:Arial;text-align:center;padding:15px}
-video{width:80%;max-width:350px;border-radius:10px;margin:10px 0}
-button{background:#e94560;color:#fff;font-size:16px;padding:14px 30px;
-border:none;border-radius:10px;margin:5px;cursor:pointer;width:90%;max-width:350px}
-input{width:80%;padding:12px;border-radius:10px;border:1px solid #333;
-background:#1a1a3e;color:#fff;font-size:16px;margin:5px 0}
-#r{background:#1a1a3e;border-radius:10px;padding:15px;margin:10px auto;
-max-width:500px;text-align:left;white-space:pre-wrap;font-size:13px;min-height:80px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;
+overflow:hidden;height:100vh;height:100dvh;display:flex;flex-direction:column;user-select:none}
+
+#topBar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;
+background:rgba(20,20,40,0.95);border-bottom:1px solid #1a1a3e;min-height:44px}
+#topBar .left{display:flex;gap:8px;align-items:center}
+#topBar .right{display:flex;gap:8px;align-items:center}
+.topBtn{background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;
+border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.topBtn.active{background:rgba(0,200,100,0.3);color:#0f0}
+#modelName{font-size:11px;color:#888;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+#cameraBox{flex:1;position:relative;background:#000;overflow:hidden;min-height:0}
+#vid{width:100%;height:100%;object-fit:cover}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:12px;pointer-events:none}
+#flash{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;
+pointer-events:none;transition:opacity 0.1s}
+
+#responseBox{position:absolute;bottom:0;left:0;right:0;max-height:45%;overflow-y:auto;
+background:linear-gradient(transparent,rgba(10,10,26,0.95) 20%);padding:60px 15px 15px;
+pointer-events:none;z-index:5}
+#responseText{pointer-events:auto;font-size:15px;line-height:1.5;color:#e0e0e0;
+text-shadow:0 1px 3px rgba(0,0,0,0.8)}
+
+#bottomBar{display:flex;align-items:center;justify-content:center;gap:15px;
+padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));
+background:rgba(20,20,40,0.95);border-top:1px solid #1a1a3e}
+
+#snapBtn{width:72px;height:72px;border-radius:50%;border:4px solid #fff;
+background:radial-gradient(circle,#e94560,#c0392b);cursor:pointer;
+display:flex;align-items:center;justify-content:center;font-size:28px;
+box-shadow:0 0 20px rgba(233,69,96,0.5);transition:transform 0.1s}
+#snapBtn:active{transform:scale(0.9)}
+#snapBtn.loading{background:radial-gradient(circle,#555,#333);border-color:#666;
+animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(100,100,100,0.3)}
+50%{box-shadow:0 0 30px rgba(100,100,100,0.6)}}
+
+.sideBtn{width:50px;height:50px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);
+background:rgba(255,255,255,0.1);color:#fff;font-size:20px;cursor:pointer;
+display:flex;align-items:center;justify-content:center}
+
+#stats{position:absolute;top:50px;left:10px;font-size:10px;color:#666;z-index:10;
+background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:6px;pointer-events:none}
+
+/* Settings Panel */
+#settingsPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
+background:rgba(0,0,0,0.8);justify-content:center;align-items:center}
+#settingsPanel.open{display:flex}
+#settingsInner{background:#1a1a3e;border-radius:16px;padding:20px;width:90%;max-width:400px;
+max-height:85vh;overflow-y:auto}
+#settingsInner h2{text-align:center;margin-bottom:15px;font-size:18px}
+.sGroup{margin-bottom:14px}
+.sGroup label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+.sGroup input,.sGroup select,.sGroup textarea{width:100%;padding:10px;border-radius:8px;
+border:1px solid #333;background:#0a0a1a;color:#fff;font-size:14px}
+.sGroup textarea{height:100px;resize:vertical;font-size:12px}
+.sRow{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.sRow label{flex:1}
+.toggle{position:relative;width:50px;height:28px;background:#333;border-radius:14px;
+cursor:pointer;border:none;flex-shrink:0}
+.toggle.on{background:#0a84ff}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;
+background:#fff;border-radius:50%;transition:0.2s}
+.toggle.on::after{left:24px}
+#closeSettings{width:100%;padding:12px;border:none;border-radius:10px;
+background:#e94560;color:#fff;font-size:16px;cursor:pointer;margin-top:10px}
+
+/* History */
+#historyPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
+background:rgba(0,0,0,0.8)}
+#historyPanel.open{display:flex;flex-direction:column}
+#historyHeader{padding:15px;display:flex;justify-content:space-between;align-items:center;
+background:#1a1a3e}
+#historyList{flex:1;overflow-y:auto;padding:10px}
+.histItem{background:#1a1a3e;border-radius:10px;padding:12px;margin-bottom:8px}
+.histItem .time{font-size:11px;color:#666}
+.histItem .msg{font-size:13px;margin-top:4px;color:#ccc}
+
 canvas{display:none}
 </style>
 </head>
 <body>
-<h2>🧪 Nano — minimal reasoning</h2>
-<input type="password" id="key" placeholder="API ключ">
-<video id="v" autoplay playsinline muted></video>
-<br>
-<button onclick="go()">📸 Отправить фото</button>
-<div id="r">Нажми кнопку...</div>
-<canvas id="c"></canvas>
+
+<div id="topBar">
+    <div class="left">
+        <button class="topBtn" onclick="toggleHistory()" title="История">📋</button>
+        <span id="modelName">gpt-5-nano</span>
+    </div>
+    <div class="right">
+        <button class="topBtn" id="voiceBtn" onclick="toggleVoice()" title="Озвучка">🔇</button>
+        <button class="topBtn" onclick="switchCam()" title="Камера">🔄</button>
+        <button class="topBtn" onclick="openSettings()" title="Настройки">⚙️</button>
+    </div>
+</div>
+
+<div id="cameraBox">
+    <video id="vid" autoplay playsinline muted></video>
+    <div id="crosshair"></div>
+    <div id="flash"></div>
+    <div id="stats"></div>
+    <div id="responseBox"><div id="responseText"></div></div>
+</div>
+
+<div id="bottomBar">
+    <button class="sideBtn" onclick="clearChat()">🗑</button>
+    <button id="snapBtn" onclick="snap()">📸</button>
+    <button class="sideBtn" onclick="repeatSpeak()">🔊</button>
+</div>
+
+<!-- Settings -->
+<div id="settingsPanel">
+<div id="settingsInner">
+    <h2>⚙️ Настройки</h2>
+    <div class="sGroup">
+        <label>API ключ (Polza.ai)</label>
+        <input type="password" id="apiKey" placeholder="sk-...">
+    </div>
+    <div class="sGroup">
+        <label>Модель</label>
+        <select id="modelSelect">
+            <option value="openai/gpt-5-nano">GPT-5 Nano ⚡</option>
+            <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+            <option value="openai/gpt-4.1-nano">GPT-4.1 Nano</option>
+            <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+        </select>
+    </div>
+    <div class="sGroup">
+        <label>Reasoning effort</label>
+        <select id="reasoningEffort">
+            <option value="minimal">Minimal (быстро)</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High (медленно)</option>
+        </select>
+    </div>
+    <div class="sGroup">
+        <label>Качество фото</label>
+        <select id="photoQuality">
+            <option value="256">256px (быстро)</option>
+            <option value="512" selected>512px (баланс)</option>
+            <option value="768">768px (чётко)</option>
+        </select>
+    </div>
+    <div class="sGroup sRow">
+        <label>Озвучка</label>
+        <button class="toggle" id="ttsToggle" onclick="this.classList.toggle('on');saveSettings()"></button>
+    </div>
+    <div class="sGroup">
+        <label>Системный промпт</label>
+        <textarea id="sysPrompt">Ты — покерный ассистент. Анализируй фото покерного стола.
+
+ОБЯЗАТЕЛЬНО определи и укажи:
+1. Мои карты (Hero)
+2. Общие карты (борд)
+3. Стадию (префлоп/флоп/тёрн/ривер)
+4. Размер банка и ставки
+5. Позиции игроков
+
+ДАТЬ РЕКОМЕНДАЦИЮ:
+- Действие: Fold / Call / Raise (размер)
+- Краткое объяснение почему
+
+Отвечай КОРОТКО — максимум 3-4 строки. Только суть!</textarea>
+    </div>
+    <button id="closeSettings" onclick="closeSettings()">Сохранить ✓</button>
+</div>
+</div>
+
+<!-- History -->
+<div id="historyPanel">
+<div id="historyHeader">
+    <h3>📋 История</h3>
+    <button class="topBtn" onclick="toggleHistory()">✕</button>
+</div>
+<div id="historyList"></div>
+</div>
+
+<canvas id="cvs"></canvas>
 
 <script>
-var v=document.getElementById('v'),c=document.getElementById('c');
-navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-.then(function(s){v.srcObject=s;});
+// ===== STATE =====
+var S={
+    key:'',model:'openai/gpt-5-nano',effort:'minimal',
+    quality:512,voice:false,prompt:'',facingMode:'environment'
+};
+var history=[];
+var chatMessages=[];
+var lastAnswer='';
+var busy=false;
+var stream=null;
 
-async function go(){
-    var key=document.getElementById('key').value.trim();
-    if(!key){alert('Ключ!');return;}
-    var r=document.getElementById('r');
-    r.textContent='⏳ Отправляю...';
+// ===== INIT =====
+loadSettings();
+startCam();
 
-    c.width=256;c.height=192;
-    c.getContext('2d').drawImage(v,0,0,256,192);
-    var b=c.toDataURL('image/jpeg',0.4).split(',')[1];
-
-    var t0=Date.now();
+function loadSettings(){
     try{
-        var res=await fetch('https://polza.ai/api/v1/chat/completions',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-            body:JSON.stringify({
-                model:'openai/gpt-5-nano',
-                messages:[{
-                    role:'user',
-                    content:[
-                        {type:'text',text:'Что на фото? Ответь ОДНИМ предложением. Коротко!'},
-                        {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}
-                    ]
-                }],
-                max_tokens:16000,
-                reasoning:{
-                    effort:'minimal',
-                    exclude:true
-                }
-            })
-        });
-        var d=await res.json();
-        var el=((Date.now()-t0)/1000).toFixed(1);
-        console.log('RAW:',JSON.stringify(d,null,2));
+        var s=JSON.parse(localStorage.getItem('pokerAgent')||'{}');
+        if(s.key)S.key=s.key;
+        if(s.model)S.model=s.model;
+        if(s.effort)S.effort=s.effort;
+        if(s.quality)S.quality=s.quality;
+        if(s.voice!==undefined)S.voice=s.voice;
+        if(s.prompt)S.prompt=s.prompt;
+    }catch(e){}
 
-        var answer='(пусто)';
-        if(d.error){
-            answer='ОШИБКА: '+JSON.stringify(d.error);
-        } else if(d.choices&&d.choices[0]&&d.choices[0].message){
-            answer=d.choices[0].message.content||'(content пустой)';
-        }
-        var u=d.usage||{};
-        var rd=u.completion_tokens_details||{};
-        r.textContent=
-            '⚡ '+el+'s\n'+
-            '🔢 out:'+(u.completion_tokens||'?')+
-            ' reason:'+(rd.reasoning_tokens||'?')+
-            ' answer:'+(u.completion_tokens-(rd.reasoning_tokens||0))+'\n'+
-            '💰 '+(u.cost_rub||u.cost||'?')+'₽\n'+
-            'finish: '+(d.choices&&d.choices[0]?d.choices[0].finish_reason:'?')+'\n'+
-            '─────────\n'+answer;
+    document.getElementById('apiKey').value=S.key;
+    document.getElementById('modelSelect').value=S.model;
+    document.getElementById('reasoningEffort').value=S.effort;
+    document.getElementById('photoQuality').value=S.quality;
+    document.getElementById('sysPrompt').value=S.prompt||document.getElementById('sysPrompt').value;
+    if(S.voice)document.getElementById('ttsToggle').classList.add('on');
+    updateVoiceBtn();
+    document.getElementById('modelName').textContent=S.model.split('/')[1];
+
+    // load prompt if empty
+    if(!S.prompt)S.prompt=document.getElementById('sysPrompt').value;
+}
+
+function saveSettings(){
+    S.key=document.getElementById('apiKey').value.trim();
+    S.model=document.getElementById('modelSelect').value;
+    S.effort=document.getElementById('reasoningEffort').value;
+    S.quality=parseInt(document.getElementById('photoQuality').value);
+    S.voice=document.getElementById('ttsToggle').classList.contains('on');
+    S.prompt=document.getElementById('sysPrompt').value.trim();
+    document.getElementById('modelName').textContent=S.model.split('/')[1];
+    updateVoiceBtn();
+    localStorage.setItem('pokerAgent',JSON.stringify(S));
+}
+
+function openSettings(){document.getElementById('settingsPanel').classList.add('open')}
+function closeSettings(){saveSettings();document.getElementById('settingsPanel').classList.remove('open')}
+
+// ===== CAMERA =====
+async function startCam(){
+    try{
+        if(stream){stream.getTracks().forEach(function(t){t.stop()});}
+        stream=await navigator.mediaDevices.getUserMedia({
+            video:{facingMode:S.facingMode,width:{ideal:1280},height:{ideal:720}}
+        });
+        document.getElementById('vid').srcObject=stream;
     }catch(e){
-        r.textContent='❌ '+e.message;
+        showResponse('❌ Камера недоступна: '+e.message);
     }
 }
+
+function switchCam(){
+    S.facingMode=S.facingMode==='environment'?'user':'environment';
+    startCam();
+}
+
+// ===== CAPTURE =====
+function capture(){
+    var vid=document.getElementById('vid');
+    var cvs=document.getElementById('cvs');
+    var vw=vid.videoWidth,vh=vid.videoHeight;
+    if(!vw)return null;
+    var sz=S.quality;
+    var scale=sz/Math.max(vw,vh);
+    cvs.width=Math.round(vw*scale);
+    cvs.height=Math.round(vh*scale);
+    cvs.getContext('2d').drawImage(vid,0,0,cvs.width,cvs.height);
+    return cvs.toDataURL('image/jpeg',0.5).split(',')[1];
+}
+
+function flashEffect(){
+    var f=document.getElementById('flash');
+    f.style.transition='none';f.style.opacity='0.7';
+    setTimeout(function(){f.style.transition='opacity 0.3s';f.style.opacity='0';},50);
+}
+
+// ===== API =====
+async function snap(){
+    if(busy)return;
+    if(!S.key){openSettings();return;}
+
+    var img=capture();
+    if(!img){showResponse('❌ Нет видео');return;}
+
+    flashEffect();
+    busy=true;
+    var btn=document.getElementById('snapBtn');
+    btn.classList.add('loading');btn.textContent='⏳';
+    showResponse('⏳ Анализирую...');
+
+    // build messages
+    var msgs=[];
+    if(S.prompt){
+        msgs.push({role:'system',content:S.prompt});
+    }
+    // add last 2 exchanges for context
+    var recent=chatMessages.slice(-4);
+    for(var i=0;i<recent.length;i++){
+        msgs.push(recent[i]);
+    }
+    // current photo
+    msgs.push({
+        role:'user',
+        content:[
+            {type:'text',text:'Анализируй покерный стол на фото.'},
+            {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+img,detail:'low'}}
+        ]
+    });
+
+    var t0=Date.now();
+
+    try{
+        var body={
+            model:S.model,
+            messages:msgs,
+            max_tokens:16000,
+            reasoning:{
+                effort:S.effort,
+                exclude:true
+            }
+        };
+
+        // non-reasoning models
+        if(S.model.indexOf('4o-mini')!==-1||S.model.indexOf('4.1-nano')!==-1){
+            delete body.reasoning;
+            body.max_tokens=500;
+        }
+
+        var res=await fetch('https://polza.ai/api/v1/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.key},
+            body:JSON.stringify(body)
+        });
+
+        var d=await res.json();
+        var elapsed=((Date.now()-t0)/1000).toFixed(1);
+        console.log('API:',JSON.stringify(d,null,2));
+
+        if(d.error){
+            showResponse('❌ '+d.error.message);
+            done();return;
+        }
+
+        var answer='';
+        if(d.choices&&d.choices[0]&&d.choices[0].message){
+            answer=d.choices[0].message.content||'';
+        }
+
+        if(!answer){
+            var u=d.usage||{};
+            var rd=u.completion_tokens_details||{};
+            showResponse('⚠️ Пустой ответ\nout:'+u.completion_tokens+
+                ' reasoning:'+(rd.reasoning_tokens||'?')+
+                '\nfinish:'+d.choices[0].finish_reason+
+                '\nПопробуй увеличить reasoning effort');
+            done();return;
+        }
+
+        // save to chat
+        chatMessages.push({role:'user',content:'[фото покерного стола]'});
+        chatMessages.push({role:'assistant',content:answer});
+        if(chatMessages.length>10)chatMessages=chatMessages.slice(-10);
+
+        // save to history
+        var u=d.usage||{};
+        history.push({
+            time:new Date().toLocaleTimeString(),
+            answer:answer,
+            tokens:u.total_tokens||0,
+            cost:u.cost_rub||u.cost||0,
+            elapsed:elapsed
+        });
+
+        // stats
+        var rd=u.completion_tokens_details||{};
+        document.getElementById('stats').textContent=
+            '⚡'+elapsed+'s | 🔢'+(u.completion_tokens||'?')+
+            'tok | 💰'+(u.cost_rub||u.cost||'?')+'₽';
+
+        lastAnswer=answer;
+        showResponse(answer);
+
+        // speak
+        if(S.voice)speak(answer);
+
+    }catch(e){
+        showResponse('❌ Ошибка: '+e.message);
+        console.error(e);
+    }
+
+    done();
+}
+
+function done(){
+    busy=false;
+    var btn=document.getElementById('snapBtn');
+    btn.classList.remove('loading');btn.textContent='📸';
+}
+
+// ===== UI =====
+function showResponse(text){
+    document.getElementById('responseText').textContent=text;
+}
+
+function clearChat(){
+    chatMessages=[];
+    showResponse('🗑 Очищено');
+    document.getElementById('stats').textContent='';
+}
+
+// ===== VOICE =====
+function toggleVoice(){
+    S.voice=!S.voice;
+    updateVoiceBtn();
+    saveSettings();
+    document.getElementById('ttsToggle').classList.toggle('on',S.voice);
+}
+
+function updateVoiceBtn(){
+    document.getElementById('voiceBtn').textContent=S.voice?'🔊':'🔇';
+    document.getElementById('voiceBtn').classList.toggle('active',S.voice);
+}
+
+function speak(text){
+    if(!text||!window.speechSynthesis)return;
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='ru-RU';u.rate=1.1;u.pitch=1.0;
+    var voices=window.speechSynthesis.getVoices();
+    for(var i=0;i<voices.length;i++){
+        if(voices[i].lang&&voices[i].lang.indexOf('ru')!==-1){
+            u.voice=voices[i];break;
+        }
+    }
+    window.speechSynthesis.speak(u);
+}
+
+function repeatSpeak(){
+    if(lastAnswer)speak(lastAnswer);
+}
+
+// preload voices
+if(window.speechSynthesis){
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
+}
+
+// ===== HISTORY =====
+function toggleHistory(){
+    document.getElementById('historyPanel').classList.toggle('open');
+    renderHistory();
+}
+
+function renderHistory(){
+    var list=document.getElementById('historyList');
+    if(!history.length){list.innerHTML='<p style="text-align:center;color:#666;padding:40px">Пусто</p>';return;}
+    var html='';
+    for(var i=history.length-1;i>=0;i--){
+        var h=history[i];
+        html+='<div class="histItem">'+
+            '<div class="time">'+h.time+' | ⚡'+h.elapsed+'s | 💰'+h.cost+'₽</div>'+
+            '<div class="msg">'+h.answer.replace(/</g,'&lt;')+'</div></div>';
+    }
+    list.innerHTML=html;
+}
+
+// ===== KEYBOARD SHORTCUT =====
+document.addEventListener('keydown',function(e){
+    if(e.code==='Space'&&!document.getElementById('settingsPanel').classList.contains('open')){
+        e.preventDefault();snap();
+    }
+});
 </script>
 </body>
 </html>
