@@ -1,428 +1,482 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>♠ Poker Agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Покер Агент</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;
-overflow:hidden;height:100vh;height:100dvh;display:flex;flex-direction:column;user-select:none}
-
-#topBar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;
-background:rgba(20,20,40,0.95);border-bottom:1px solid #1a1a3e;min-height:44px}
-#topBar .left{display:flex;gap:8px;align-items:center}
-#topBar .right{display:flex;gap:8px;align-items:center}
-.topBtn{background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;
-border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.topBtn.active{background:rgba(0,200,100,0.3);color:#0f0}
-#modelName{font-size:11px;color:#888;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-#cameraBox{flex:1;position:relative;background:#000;overflow:hidden;min-height:0}
-#vid{width:100%;height:100%;object-fit:cover}
-#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:12px;pointer-events:none}
-#flash{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;
-pointer-events:none;transition:opacity 0.1s}
-
-#responseBox{position:absolute;bottom:0;left:0;right:0;max-height:45%;overflow-y:auto;
-background:linear-gradient(transparent,rgba(10,10,26,0.95) 20%);padding:60px 15px 15px;
-pointer-events:none;z-index:5}
-#responseText{pointer-events:auto;font-size:15px;line-height:1.5;color:#e0e0e0;
-text-shadow:0 1px 3px rgba(0,0,0,0.8)}
-
-#bottomBar{display:flex;align-items:center;justify-content:center;gap:15px;
-padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));
-background:rgba(20,20,40,0.95);border-top:1px solid #1a1a3e}
-
-#snapBtn{width:72px;height:72px;border-radius:50%;border:4px solid #fff;
-background:radial-gradient(circle,#e94560,#c0392b);cursor:pointer;
-display:flex;align-items:center;justify-content:center;font-size:28px;
-box-shadow:0 0 20px rgba(233,69,96,0.5);transition:transform 0.1s}
-#snapBtn:active{transform:scale(0.9)}
-#snapBtn.loading{background:radial-gradient(circle,#555,#333);border-color:#666;
-animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(100,100,100,0.3)}
-50%{box-shadow:0 0 30px rgba(100,100,100,0.6)}}
-
-.sideBtn{width:50px;height:50px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);
-background:rgba(255,255,255,0.1);color:#fff;font-size:20px;cursor:pointer;
-display:flex;align-items:center;justify-content:center}
-
-#stats{position:absolute;top:50px;left:10px;font-size:10px;color:#666;z-index:10;
-background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:6px;pointer-events:none}
-
-#settingsPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
-background:rgba(0,0,0,0.8);justify-content:center;align-items:center}
-#settingsPanel.open{display:flex}
-#settingsInner{background:#1a1a3e;border-radius:16px;padding:20px;width:90%;max-width:400px;
-max-height:85vh;overflow-y:auto}
-#settingsInner h2{text-align:center;margin-bottom:15px;font-size:18px}
-.sGroup{margin-bottom:14px}
-.sGroup label{display:block;font-size:12px;color:#888;margin-bottom:4px}
-.sGroup input,.sGroup select,.sGroup textarea{width:100%;padding:10px;border-radius:8px;
-border:1px solid #333;background:#0a0a1a;color:#fff;font-size:14px}
-.sGroup textarea{height:100px;resize:vertical;font-size:12px}
-.sRow{display:flex;gap:10px;align-items:center;justify-content:space-between}
-.sRow label{flex:1}
-.toggle{position:relative;width:50px;height:28px;background:#333;border-radius:14px;
-cursor:pointer;border:none;flex-shrink:0}
-.toggle.on{background:#0a84ff}
-.toggle::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;
-background:#fff;border-radius:50%;transition:0.2s}
-.toggle.on::after{left:24px}
-#closeSettings{width:100%;padding:12px;border:none;border-radius:10px;
-background:#e94560;color:#fff;font-size:16px;cursor:pointer;margin-top:10px}
-
-#historyPanel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
-background:rgba(0,0,0,0.8)}
-#historyPanel.open{display:flex;flex-direction:column}
-#historyHeader{padding:15px;display:flex;justify-content:space-between;align-items:center;
-background:#1a1a3e}
-#historyList{flex:1;overflow-y:auto;padding:10px}
-.histItem{background:#1a1a3e;border-radius:10px;padding:12px;margin-bottom:8px}
-.histItem .time{font-size:11px;color:#666}
-.histItem .msg{font-size:13px;margin-top:4px;color:#ccc}
-
+body{background:#0a0a1a;color:#fff;font-family:-apple-system,Arial;text-align:center;
+min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
+h1{font-size:20px;margin:8px 0}
+.vid-wrap{width:100%;max-width:420px;margin:8px 0;overflow:hidden;border-radius:15px;position:relative}
+.vid-wrap video{width:100%;display:block;margin-top:-20%;margin-bottom:-20%}
+#action{font-size:52px;font-weight:700;margin:10px 0 5px;min-height:65px;
+text-shadow:0 0 20px rgba(255,255,255,0.3)}
+#cards{font-size:18px;color:#aaa;min-height:24px;margin-bottom:5px}
+#street{font-size:14px;color:#fa0;min-height:20px;margin-bottom:5px}
+#info{font-size:11px;color:#555;margin:4px 0}
+#total{color:#666;font-size:12px;margin:4px 0}
+.fold{color:#f44}.call{color:#4f4}.raise{color:#fa0}.check{color:#4af}
+button{font-size:18px;padding:16px 40px;border:none;border-radius:15px;
+cursor:pointer;margin:4px;font-weight:700;width:85%;max-width:350px}
+#goBtn{background:#e94560;color:#fff;font-size:24px;padding:22px 40px;
+border-radius:20px;min-height:75px;
+box-shadow:0 4px 25px rgba(233,69,96,0.4);
+transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+#goBtn:active{transform:scale(0.95)}
+#goBtn:disabled{background:#666;box-shadow:none}
+#newHand{background:#333;color:#fa0;font-size:14px;padding:12px 30px}
+.tabs{display:flex;width:95%;max-width:420px;margin:8px 0;background:#1a1a3e;border-radius:12px;overflow:hidden}
+.tab{flex:1;padding:11px;font-size:13px;font-weight:700;background:none;color:#666;border:none;cursor:pointer}
+.tab.active{background:#e94560;color:#fff}
+.pg{display:none;width:95%;max-width:420px}.pg.active{display:block}
+#setup{width:90%;max-width:400px}
+#setup input,#setup select{width:100%;padding:14px;border-radius:12px;border:1px solid #333;background:#1a1a3e;color:#fff;font-size:16px;margin:6px 0;-webkit-appearance:none}
+#setup select option{background:#1a1a3e}
+#startBtn{background:#44c;color:#fff;margin-top:10px}
+.hint{color:#555;font-size:12px;margin:5px 0 15px;text-align:left}
+#app{display:none;width:100%;flex-direction:column;align-items:center}
 canvas{display:none}
+.pc{background:#1a1a3e;border-radius:12px;padding:12px 15px;margin:6px 0;text-align:left;border-left:4px solid #666}
+.pc.fish{border-left-color:#4f4}.pc.reg{border-left-color:#f44}.pc.unknown{border-left-color:#fa0}
+.pn{font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.pt{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700}
+.tf{background:#1a3a1a;color:#4f4}.tr{background:#3a1a1a;color:#f44}.tu{background:#3a3a1a;color:#fa0}
+.ni{width:100%;padding:7px;border-radius:8px;border:1px solid #333;background:#0f0f23;color:#fff;font-size:12px;margin-top:5px}
+.hi{background:#1a1a3e;border-radius:10px;padding:10px 15px;margin:5px 0;font-size:12px;color:#aaa;text-align:left}
+.hi b{font-size:14px}
+.ss{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.si{background:#1a1a3e;border-radius:12px;padding:14px 10px}
+.si .v{font-size:24px;font-weight:700}.si .l{font-size:11px;color:#666;margin-top:3px}
+#settBtn{background:#1a1a3e;color:#888;font-size:13px;padding:10px 20px;margin-top:12px}
+.mem{background:#1a1a3e;border-radius:10px;padding:8px 12px;margin:3px 0;font-size:12px;color:#888;text-align:left}
+.mem b{color:#fa0}
 </style>
 </head>
 <body>
-
-<div id="topBar">
-<div class="left">
-<button class="topBtn" onclick="toggleHistory()">📋</button>
-<span id="modelName">gpt-5-nano</span>
-</div>
-<div class="right">
-<button class="topBtn" id="voiceBtn" onclick="toggleVoice()">🔇</button>
-<button class="topBtn" onclick="switchCam()">🔄</button>
-<button class="topBtn" onclick="openSettings()">⚙️</button>
-</div>
-</div>
-
-<div id="cameraBox">
-<video id="vid" autoplay playsinline muted></video>
-<div id="crosshair"></div>
-<div id="flash"></div>
-<div id="stats"></div>
-<div id="responseBox"><div id="responseText"></div></div>
-</div>
-
-<div id="bottomBar">
-<button class="sideBtn" onclick="clearChat()">🗑</button>
-<button id="snapBtn" onclick="snap()">📸</button>
-<button class="sideBtn" onclick="repeatSpeak()">🔊</button>
-</div>
-
-<div id="settingsPanel">
-<div id="settingsInner">
-<h2>⚙️ Настройки</h2>
-<div class="sGroup">
-<label>API ключ (Polza.ai)</label>
-<input type="password" id="apiKey" placeholder="sk-...">
-</div>
-<div class="sGroup">
-<label>Модель</label>
-<select id="modelSelect">
-<option value="openai/gpt-5-nano">GPT-5 Nano ⚡</option>
-<option value="openai/gpt-4o-mini">GPT-4o Mini</option>
-<option value="openai/gpt-4.1-nano">GPT-4.1 Nano</option>
-<option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+<div id="setup">
+<h1>🤖 Покер Агент</h1>
+<p style="color:#888;margin:10px 0">Ручной режим с памятью руки</p>
+<select id="mSel">
+<option value="openai/gpt-5-nano" selected>⚡ GPT-5 Nano (быстрый+дешёвый)</option>
+<option value="openai/gpt-4o-mini">🔵 GPT-4o-mini</option>
+<option value="google/gemini-3-flash-preview">🔥 Gemini 3 Flash</option>
+<option value="google/gemini-2.5-flash-preview">⚡ Gemini 2.5 Flash</option>
+<option value="openai/gpt-4o">🟣 GPT-4o</option>
 </select>
+<input type="password" id="kIn" placeholder="Polza.ai API ключ">
+<div class="hint">🔗 polza.ai → Личный кабинет → API Keys</div>
+<button id="startBtn" onclick="save()">🚀 Начать</button>
 </div>
-<div class="sGroup">
-<label>Reasoning effort</label>
-<select id="reasoningEffort">
-<option value="minimal">Minimal (быстро)</option>
-<option value="low">Low</option>
-<option value="medium">Medium</option>
-<option value="high">High (медленно)</option>
-</select>
+<div id="app">
+<h1>🤖 Покер Агент</h1>
+<div class="tabs">
+<button class="tab active" onclick="tab('g')">🎯 Игра</button>
+<button class="tab" onclick="tab('p')">👥 Игроки</button>
+<button class="tab" onclick="tab('s')">📊 Сессия</button>
 </div>
-<div class="sGroup">
-<label>Качество фото</label>
-<select id="photoQuality">
-<option value="256">256px (быстро)</option>
-<option value="512">512px (баланс)</option>
-<option value="768">768px (чётко)</option>
-<option value="1024" selected>1024px (максимум)</option>
-</select>
+<div id="gPg" class="pg active">
+<div class="vid-wrap"><video id="vid" autoplay playsinline muted></video></div>
+<div id="action">Наведи камеру 📸</div>
+<div id="cards"></div>
+<div id="street"></div>
+<div id="memory"></div>
+<div id="info"></div>
+<button id="goBtn" onclick="go()">📸 АНАЛИЗ</button>
+<button id="newHand" onclick="newHand()">🔄 НОВАЯ РУКА</button>
+<div id="total"></div>
 </div>
-<div class="sGroup sRow">
-<label>Озвучка</label>
-<button class="toggle" id="ttsToggle" onclick="this.classList.toggle('on');saveSettings()"></button>
+<div id="pPg" class="pg"><div id="pList"></div></div>
+<div id="sPg" class="pg">
+<div class="ss">
+<div class="si"><div class="v" id="sH">0</div><div class="l">Рук</div></div>
+<div class="si"><div class="v" id="sC">0₽</div><div class="l">Потрачено</div></div>
+<div class="si"><div class="v" id="sF">0</div><div class="l">🐟 Фишей</div></div>
+<div class="si"><div class="v" id="sR">0</div><div class="l">🦈 Регов</div></div>
+<div class="si"><div class="v" id="sS">0s</div><div class="l">Ср.скорость</div></div>
 </div>
-<div class="sGroup">
-<label>Системный промпт</label>
-<textarea id="sysPrompt">Ты — покерный ассистент. Анализируй фото покерного стола.
-
-ОБЯЗАТЕЛЬНО определи и укажи:
-1. Мои карты (Hero)
-2. Общие карты (борд)
-3. Стадию (префлоп/флоп/тёрн/ривер)
-4. Размер банка и ставки
-5. Позиции игроков
-
-ДАТЬ РЕКОМЕНДАЦИЮ:
-- Действие: Fold / Call / Raise (размер)
-- Краткое объяснение почему
-
-Отвечай КОРОТКО — максимум 3-4 строки. Только суть!</textarea>
+<h3 style="margin:15px 0 10px;color:#aaa">История</h3>
+<div id="hist"></div>
+<button onclick="reset()" style="background:#3a1a1a;color:#f66;font-size:14px;padding:12px;margin-top:20px;width:85%">🗑 Сбросить</button>
 </div>
-<button id="closeSettings" onclick="closeSettings()">Сохранить ✓</button>
+<button id="settBtn" onclick="showSetup()">⚙️ Настройки</button>
 </div>
-</div>
-
-<div id="historyPanel">
-<div id="historyHeader">
-<h3>📋 История</h3>
-<button class="topBtn" onclick="toggleHistory()">✕</button>
-</div>
-<div id="historyList"></div>
-</div>
-
 <canvas id="cvs"></canvas>
-
 <script>
-var S={key:'',model:'openai/gpt-5-nano',effort:'minimal',quality:512,voice:false,prompt:'',facingMode:'environment'};
-var hist=[];
-var chatMessages=[];
-var lastAnswer='';
-var busy=false;
-var camStream=null;
+var G={m:ls('m')||'openai/gpt-5-nano',k:ls('k')||''};
+var HI=jp('hi')||[],TS=+ls('ts')||0,HP=+ls('hp')||0,TT=+ls('tt')||0;
+var DB=jp('db')||{};
+var HAND=[];
+var vid=document.getElementById('vid'),cvs=document.getElementById('cvs');
 
-loadSettings();
-startCam();
+function ls(k,v){if(v!==undefined)localStorage.setItem(k,v);return localStorage.getItem(k)}
+function jp(k){try{return JSON.parse(ls(k))}catch(e){return null}}
 
-function loadSettings(){
-    try{
-        var s=JSON.parse(localStorage.getItem('pokerAgent')||'{}');
-        if(s.key)S.key=s.key;
-        if(s.model)S.model=s.model;
-        if(s.effort)S.effort=s.effort;
-        if(s.quality)S.quality=s.quality;
-        if(s.voice!==undefined)S.voice=s.voice;
-        if(s.prompt)S.prompt=s.prompt;
-    }catch(e){}
-    document.getElementById('apiKey').value=S.key;
-    document.getElementById('modelSelect').value=S.model;
-    document.getElementById('reasoningEffort').value=S.effort;
-    document.getElementById('photoQuality').value=S.quality;
-    document.getElementById('sysPrompt').value=S.prompt||document.getElementById('sysPrompt').value;
-    if(S.voice)document.getElementById('ttsToggle').classList.add('on');
-    updateVoiceBtn();
-    document.getElementById('modelName').textContent=S.model.split('/')[1];
-    if(!S.prompt)S.prompt=document.getElementById('sysPrompt').value;
-}
+var REASONING_MODELS=['openai/gpt-5-nano','openai/o4-mini','openai/o3','openai/o3-mini','openai/o1','openai/o1-mini'];
 
-function saveSettings(){
-    S.key=document.getElementById('apiKey').value.trim();
-    S.model=document.getElementById('modelSelect').value;
-    S.effort=document.getElementById('reasoningEffort').value;
-    S.quality=parseInt(document.getElementById('photoQuality').value);
-    S.voice=document.getElementById('ttsToggle').classList.contains('on');
-    S.prompt=document.getElementById('sysPrompt').value.trim();
-    document.getElementById('modelName').textContent=S.model.split('/')[1];
-    updateVoiceBtn();
-    localStorage.setItem('pokerAgent',JSON.stringify(S));
-}
-
-function openSettings(){document.getElementById('settingsPanel').classList.add('open')}
-function closeSettings(){saveSettings();document.getElementById('settingsPanel').classList.remove('open')}
-
-async function startCam(){
-    try{
-        if(camStream){camStream.getTracks().forEach(function(t){t.stop()});}
-        camStream=await navigator.mediaDevices.getUserMedia({
-            video:{facingMode:S.facingMode,width:{ideal:1280},height:{ideal:720}}
-        });
-        document.getElementById('vid').srcObject=camStream;
-    }catch(e){
-        showResponse('❌ Камера: '+e.message);
+function isReasoning(model){
+    for(var i=0;i<REASONING_MODELS.length;i++){
+        if(model===REASONING_MODELS[i])return true;
     }
+    return false;
 }
 
-function switchCam(){
-    S.facingMode=S.facingMode==='environment'?'user':'environment';
-    startCam();
+var SYS=`Ты покерный помощник. Анализируй скриншот PokerOK.
+
+ШАГ 1 — НАЙДИ КАРТЫ ГЕРОЯ:
+Герой сидит ВНИЗУ ЦЕНТР экрана. Его 2 карты самые крупные внизу рядом с его ником.
+Прочитай ВНИМАТЕЛЬНО номинал и масть каждой карты.
+НЕ ПУТАЙ с картами других игроков!
+Если карт НЕ ВИДНО — напиши "не видны". НЕ ВЫДУМЫВАЙ!
+
+ШАГ 2 — НАЙДИ БОРД:
+Общие карты в ЦЕНТРЕ стола. Если нет — ПРЕФЛОП.
+3 карты = ФЛОП. 4 = ТЁРН. 5 = РИВЕР.
+
+ШАГ 3 — НАЙДИ ПОЗИЦИЮ ГЕРОЯ:
+Кнопка "D" стоит у ОДНОГО игрока — он BTN.
+ВАЖНО: "D" может быть НЕ у героя! Смотри ГДЕ стоит "D":
+- "D" у героя внизу → герой BTN
+- "D" справа от героя → герой SB
+- "D" через 2 вправо → герой BB
+- "D" слева от героя → герой CO
+- "D" далеко → герой UTG/MP/HJ
+По часовой от D: BTN→SB→BB→UTG→UTG1→MP→MP2→HJ→CO
+
+ШАГ 4 — ДЕЙСТВИЕ:
+
+!!! ФОЛД ЗАПРЕЩЁН когда нет ставки перед нами !!!
+- BB и никто не рейзил → ЧЕК
+- Постфлоп никто не бетил → ЧЕК или БЕТ
+- ФОЛД только когда ЕСТЬ чужая ставка и слабая рука
+
+ПРЕФЛОП ОТКРЫТИЕ (никто не рейзил) РЕЙЗ 2.5ББ:
+UTG: 77+, AJs+, KQs, AQo+
+UTG1: 66+, ATs+, KQs, KJs, QJs, AQo+, KQo
+MP: 55+, A9s+, KTs+, QTs+, JTs, T9s, AJo+, KQo
+HJ: 33+, A2s+, K5s+, Q8s+, J8s+, T8s+, 97s+, 87s, 76s, 65s, A9o+, KTo+, QTo+, JTo
+CO: 22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A2o+, K9o+, Q9o+, J9o+, T9o
+BTN: 22+, A2s+, K2s+, Q2s+, J4s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o
+SB: 22+, A2s+, K2s+, Q4s+, J7s+, T7s+, 96s+, 86s+, A2o+, K7o+, Q9o+, J9o+
+s=suited o=offsuit
+
+VS РЕЙЗ: 3-бет AA-QQ,AK. Колл пары,suited коннекторы в позиции. Фолд мусор.
+BB VS РЕЙЗ: колл широко, 3-бет AA-QQ,AK.
+
+ПОСТФЛОП:
+Нет ставки → ФОЛД НЕЛЬЗЯ! ЧЕК или БЕТ!
+Топ пара+, сет → БЕТ 50-75% пота
+Дро → БЕТ 33%
+Средняя → ЧЕК
+Воздух → ЧЕК, фолд на чужой бет
+
+МАСТИ: ♠♥♦♣
+
+ЗАПРЕЩЕНО задавать вопросы!
+ЗАПРЕЩЕНО рассуждать!
+ЗАПРЕЩЕНО объяснять!
+
+ОТВЕТ СТРОГО 3 СТРОКИ И НИЧЕГО БОЛЬШЕ:
+РУКА: [2 карты героя] | БОРД: [карты/нет] | [позиция]
+[ФОЛД/КОЛЛ/РЕЙЗ ХББ/БЕТ ХББ/ЧЕК]
+ИГРОКИ: [ник=FISH/REG/UNKNOWN]`;
+
+function mkCtx(){
+    var k='';
+    var n=Object.keys(DB);
+    if(n.length>0){k+='\nИзвестные:';for(var x of n)k+=' '+x+'='+DB[x].t;}
+    if(HAND.length>0){
+        k+='\n\nТЕКУЩАЯ РУКА (история):';
+        for(var i=0;i<HAND.length;i++){
+            k+='\nУлица '+(i+1)+': '+HAND[i].cards+' → '+HAND[i].action;
+        }
+        k+='\nНовая улица. Учитывай историю!';
+    }
+    return k+'\nАнализируй скриншот. ТОЛЬКО 3 СТРОКИ!';
 }
 
-function capture(){
-    var vid=document.getElementById('vid');
-    var cvs=document.getElementById('cvs');
+function init(){
+    if(G.k){document.getElementById('mSel').value=G.m;
+    document.getElementById('kIn').value=G.k;go2();}
+    uSS();rP();uMem();
+}
+
+function save(){
+    var k=document.getElementById('kIn').value.trim();
+    if(!k){alert('Введи API ключ!');return;}
+    G.m=document.getElementById('mSel').value;G.k=k;
+    ls('m',G.m);ls('k',G.k);go2();
+}
+
+function showSetup(){
+    document.getElementById('app').style.display='none';
+    document.getElementById('setup').style.display='block';
+    document.getElementById('mSel').value=G.m;
+    document.getElementById('kIn').value=G.k;
+}
+
+function go2(){
+    document.getElementById('setup').style.display='none';
+    document.getElementById('app').style.display='flex';
+    cam();uSS();
+}
+
+function tab(t){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
+    document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('active')});
+    var ts=document.querySelectorAll('.tab');
+    if(t==='g'){ts[0].classList.add('active');document.getElementById('gPg').classList.add('active');}
+    else if(t==='p'){ts[1].classList.add('active');document.getElementById('pPg').classList.add('active');rP();}
+    else{ts[2].classList.add('active');document.getElementById('sPg').classList.add('active');uSS();}
+}
+
+async function cam(){
+    try{var s=await navigator.mediaDevices.getUserMedia(
+    {video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    vid.srcObject=s;}catch(e){alert('Разреши камеру!');}
+}
+
+function snap(){
     var vw=vid.videoWidth,vh=vid.videoHeight;
-    if(!vw)return null;
-    var sz=S.quality;
-    var scale=sz/Math.max(vw,vh);
-    cvs.width=Math.round(vw*scale);
-    cvs.height=Math.round(vh*scale);
-    cvs.getContext('2d').drawImage(vid,0,0,cvs.width,cvs.height);
+    var cropTop=Math.round(vh*0.25);
+    var cropH=Math.round(vh*0.5);
+    var maxW=512;
+    var scale=Math.min(maxW/vw,1);
+    var outW=Math.round(vw*scale);
+    var outH=Math.round(cropH*scale);
+    cvs.width=outW;cvs.height=outH;
+    cvs.getContext('2d').drawImage(vid,0,cropTop,vw,cropH,0,0,outW,outH);
     return cvs.toDataURL('image/jpeg',0.5).split(',')[1];
 }
 
-function flashEffect(){
-    var f=document.getElementById('flash');
-    f.style.transition='none';f.style.opacity='0.7';
-    setTimeout(function(){f.style.transition='opacity 0.3s';f.style.opacity='0';},50);
-}
+async function api(b){
+    var ms=[];
+    ms.push({role:'system',content:SYS});
+    ms.push({role:'user',content:[{type:'text',text:mkCtx()},
+    {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}]});
 
-async function snap(){
-    if(busy)return;
-    if(!S.key){openSettings();return;}
-    var img=capture();
-    if(!img){showResponse('❌ Нет видео');return;}
+    var body={model:G.m,messages:ms,temperature:0.1};
 
-    flashEffect();
-    busy=true;
-    var btn=document.getElementById('snapBtn');
-    btn.classList.add('loading');btn.textContent='⏳';
-    showResponse('⏳ Анализирую...');
-
-    var msgs=[];
-    if(S.prompt){msgs.push({role:'system',content:S.prompt});}
-    var recent=chatMessages.slice(-4);
-    for(var i=0;i<recent.length;i++){msgs.push(recent[i]);}
-    msgs.push({
-        role:'user',
-        content:[
-            {type:'text',text:'Анализируй покерный стол на фото.'},
-            {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+img,detail:'low'}}
-        ]
-    });
-
-    var t0=Date.now();
-    try{
-        var body={
-            model:S.model,
-            messages:msgs,
-            max_tokens:16000,
-            reasoning:{effort:S.effort,exclude:true}
-        };
-
-        if(S.model.indexOf('4o-mini')!==-1||S.model.indexOf('4.1-nano')!==-1){
-            delete body.reasoning;
-            body.max_tokens=500;
-        }
-
-        var res=await fetch('https://polza.ai/api/v1/chat/completions',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.key},
-            body:JSON.stringify(body)
-        });
-
-        var d=await res.json();
-        var elapsed=((Date.now()-t0)/1000).toFixed(1);
-        console.log('API:',JSON.stringify(d,null,2));
-
-        if(d.error){showResponse('❌ '+d.error.message);done();return;}
-
-        var answer='';
-        if(d.choices&&d.choices[0]&&d.choices[0].message){
-            answer=d.choices[0].message.content||'';
-        }
-
-        if(!answer){
-            showResponse('⚠️ Пустой ответ. finish:'+
-                (d.choices&&d.choices[0]?d.choices[0].finish_reason:'?')+
-                '\nПопробуй увеличить effort в настройках');
-            done();return;
-        }
-
-        chatMessages.push({role:'user',content:'[фото покерного стола]'});
-        chatMessages.push({role:'assistant',content:answer});
-        if(chatMessages.length>10)chatMessages=chatMessages.slice(-10);
-
-        var u=d.usage||{};
-        hist.push({
-            time:new Date().toLocaleTimeString(),
-            answer:answer,
-            tokens:u.total_tokens||0,
-            cost:u.cost_rub||u.cost||0,
-            elapsed:elapsed
-        });
-
-        document.getElementById('stats').textContent=
-            '⚡'+elapsed+'s | 🔢'+(u.completion_tokens||'?')+'tok | 💰'+(u.cost_rub||u.cost||'?')+'₽';
-
-        lastAnswer=answer;
-        showResponse(answer);
-        if(S.voice)speak(answer);
-
-    }catch(e){
-        showResponse('❌ Ошибка: '+e.message);
+    if(isReasoning(G.m)){
+        body.max_tokens=16000;
+        body.reasoning={effort:'minimal',exclude:true};
+    }else{
+        body.max_tokens=150;
     }
-    done();
+
+    var r=await fetch('https://polza.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+G.k},
+        body:JSON.stringify(body)
+    });
+    var d=await r.json();
+    if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+    if(!d.choices||!d.choices[0])throw new Error('Пустой ответ');
+    var content=d.choices[0].message.content||'';
+    if(!content.trim())throw new Error('Пустой content (reasoning съел токены — попробуй другую модель)');
+    var u=d.usage||{};
+    return{txt:content.trim(),
+    cost:u.cost_rub||u.cost||0,tok:u.total_tokens||0};
 }
 
-function done(){
-    busy=false;
-    var btn=document.getElementById('snapBtn');
-    btn.classList.remove('loading');btn.textContent='📸';
-}
-
-function showResponse(text){document.getElementById('responseText').textContent=text;}
-
-function clearChat(){
-    chatMessages=[];
-    showResponse('🗑 Очищено');
-    document.getElementById('stats').textContent='';
-}
-
-function toggleVoice(){
-    S.voice=!S.voice;
-    updateVoiceBtn();
-    saveSettings();
-    document.getElementById('ttsToggle').classList.toggle('on',S.voice);
-}
-
-function updateVoiceBtn(){
-    document.getElementById('voiceBtn').textContent=S.voice?'🔊':'🔇';
-    document.getElementById('voiceBtn').classList.toggle('active',S.voice);
+function pP(a){
+    var line=a.split('\n').find(function(l){
+        return l.toUpperCase().includes('ИГРОКИ')||l.toUpperCase().includes('PLAYERS');});
+    if(!line)return;
+    var ms=line.matchAll(/([a-zA-Z0-9_\-!.]{2,25}?)\s*[=:]\s*(FISH|REG|UNKNOWN)/gi);
+    for(var m of ms){
+        var nm=m[1].trim(),tp=m[2].toUpperCase();
+        if(nm.length<2)continue;
+        if(!DB[nm])DB[nm]={t:tp,h:0,n:''};
+        if(tp!=='UNKNOWN'||DB[nm].t==='UNKNOWN')DB[nm].t=tp;
+        DB[nm].h++;
+    }
+    ls('db',JSON.stringify(DB));
 }
 
 function speak(text){
-    if(!text||!window.speechSynthesis)return;
-    window.speechSynthesis.cancel();
+    if(!('speechSynthesis' in window)||!text)return;
+    speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(text);
-    u.lang='ru-RU';u.rate=1.1;u.pitch=1.0;
-    var voices=window.speechSynthesis.getVoices();
-    for(var i=0;i<voices.length;i++){
-        if(voices[i].lang&&voices[i].lang.indexOf('ru')!==-1){u.voice=voices[i];break;}
+    u.lang='ru-RU';u.rate=1.5;u.volume=0.8;
+    speechSynthesis.speak(u);
+}
+
+function newHand(){
+    HAND=[];
+    uMem();
+    document.getElementById('action').textContent='Новая рука 🃏';
+    document.getElementById('action').className='';
+    document.getElementById('cards').textContent='';
+    document.getElementById('street').textContent='';
+    HP++;ls('hp',HP);uSS();
+}
+
+function uMem(){
+    var el=document.getElementById('memory');
+    if(HAND.length===0){el.innerHTML='';return;}
+    el.innerHTML=HAND.map(function(h,i){
+        return '<div class="mem"><b>Улица '+(i+1)+':</b> '+h.cards+' → '+h.action+'</div>';
+    }).join('');
+}
+
+function rP(){
+    var c=document.getElementById('pList');
+    var ns=Object.keys(DB).sort(function(a,b){
+        var o={FISH:0,UNKNOWN:1,REG:2};
+        return(o[DB[a].t]||1)-(o[DB[b].t]||1);});
+    if(!ns.length){c.innerHTML='<p style="color:#555;margin:40px 0">Игроки появятся после анализа</p>';return;}
+    c.innerHTML=ns.map(function(nm){
+        var p=DB[nm];
+        var tc=p.t==='FISH'?'fish':p.t==='REG'?'reg':'unknown';
+        var tl=p.t==='FISH'?'🐟 ФИШ':p.t==='REG'?'🦈 РЕГ':'❓ ???';
+        var tb=p.t==='FISH'?'tf':p.t==='REG'?'tr':'tu';
+        return '<div class="pc '+tc+'"><div class="pn"><span>'+nm+
+        '</span><span class="pt '+tb+'">'+tl+'</span></div>'+
+        '<div style="font-size:12px;color:#888;margin-top:4px">Рук: '+p.h+'</div>'+
+        '<input class="ni" placeholder="Заметка..." value="'+(p.n||'')+
+        '" onchange="aN(\''+nm+'\',this.value)"></div>';
+    }).join('');
+}
+
+function aN(nm,v){if(DB[nm]){DB[nm].n=v;ls('db',JSON.stringify(DB));}}
+
+async function go(){
+    var btn=document.getElementById('goBtn');
+    var act=document.getElementById('action');
+    var crd=document.getElementById('cards');
+    var strt=document.getElementById('street');
+    var inf=document.getElementById('info');
+    btn.disabled=true;btn.textContent='⏳ ...';
+    act.textContent='⏳';act.className='';
+    crd.textContent='';strt.textContent='';inf.textContent='';
+    try{
+        var b=snap(),t0=Date.now();
+        var r=await api(b);
+        var a=r.txt,el=((Date.now()-t0)/1000).toFixed(1);
+        TS+=r.cost;TT+=+el;
+        ls('ts',TS);ls('tt',TT);
+        pP(a);
+        console.log('ОТВЕТ:',a);
+
+        var lines=a.split('\n').filter(function(l){return l.trim()});
+        var handLine='',actionRaw='';
+        for(var i=0;i<lines.length;i++){
+            var u=lines[i].toUpperCase();
+            if(u.includes('РУКА')||u.includes('БОРД'))handLine=lines[i];
+            else if(!actionRaw&&(u.includes('ФОЛД')||u.includes('FOLD')||
+            u.includes('КОЛЛ')||u.includes('CALL')||u.includes('РЕЙЗ')||
+            u.includes('RAISE')||u.includes('БЕТ')||u.includes('BET')||
+            u.includes('ЧЕК')||u.includes('CHECK')||u.includes('ОЛИН')||
+            u.includes('ALL')))actionRaw=lines[i];
+        }
+
+        var src=(actionRaw||a).toUpperCase(),ac='',dsp='',voice='';
+        if(src.includes('ОЛИН')||src.includes('ALL-IN')||src.includes('ALL IN')||src.includes('ОЛЛ')){
+            ac='raise';dsp='ОЛИН 🔥🔥🔥';voice='Олын';
+        }
+        else if(src.includes('ФОЛД')||src.includes('FOLD')){
+            ac='fold';dsp='ФОЛД ❌';voice='Фолд';
+        }
+        else if(src.includes('РЕЙЗ')||src.includes('RAISE')){
+            ac='raise';var m=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
+            dsp=m?'РЕЙЗ '+m[1]+' ББ 🔥':'РЕЙЗ 🔥';
+            voice=m?'Рейз '+m[1]:'Рейз';
+        }
+        else if(src.includes('БЕТ')||src.includes('BET')){
+            ac='raise';var m=(actionRaw||a).match(/(\d+[\.,]?\d*)\s*(ББ|BB)/i);
+            dsp=m?'БЕТ '+m[1]+' ББ 🔥':'БЕТ 🔥';
+            voice=m?'Бет '+m[1]:'Бет';
+        }
+        else if(src.includes('КОЛЛ')||src.includes('CALL')){
+            ac='call';dsp='КОЛЛ ✅';voice='Колл';
+        }
+        else if(src.includes('ЧЕК')||src.includes('CHECK')){
+            ac='check';dsp='ЧЕК 🔵';voice='Чек';
+        }
+        else{ac='';dsp=a.substring(0,60);voice='Не понял';}
+
+        var streetName='';
+        if(handLine){
+            var bu=handLine.toUpperCase();
+            if(bu.includes('НЕТ'))streetName='ПРЕФЛОП';
+            else{
+                var bIdx=bu.indexOf('БОРД');
+                if(bIdx===-1)streetName='ПРЕФЛОП';
+                else{
+                    var after=handLine.substring(bIdx+4);
+                    var cardCount=(after.match(/[2-9TJQKA]/gi)||[]).length;
+                    if(cardCount<=0)streetName='ПРЕФЛОП';
+                    else if(cardCount<=3)streetName='ФЛОП';
+                    else if(cardCount===4)streetName='ТЁРН';
+                    else streetName='РИВЕР';
+                }
+            }
+        }
+
+        var pos='';
+        var posMatch=(handLine||a).match(/(BTN|SB|BB|UTG\+?1?|MP\d?|HJ|CO)/i);
+        if(posMatch)pos=posMatch[1].toUpperCase();
+
+        HAND.push({cards:handLine||'?',action:dsp,street:streetName});
+        uMem();
+
+        act.textContent=dsp;act.className=ac;
+        crd.textContent=handLine||'';
+        strt.textContent=(pos?'👤 '+pos+' | ':'')+(streetName?'📍 '+streetName:'')+(HAND.length>1?' (улица '+HAND.length+')':'');
+        inf.textContent='💰'+r.cost.toFixed(3)+'₽ | '+r.tok+'tok | ⚡'+el+'s';
+        document.getElementById('total').textContent='💳 Всего: '+TS.toFixed(2)+'₽ | Рук: '+HP;
+
+        speak(voice);
+
+        if(navigator.vibrate){
+            if(ac==='fold')navigator.vibrate(200);
+            else if(ac==='raise')navigator.vibrate([100,50,100,50,100]);
+            else if(ac==='call')navigator.vibrate(100);
+            else navigator.vibrate(50);
+        }
+
+        HI.unshift({d:dsp,h:handLine||'',e:el,s:streetName,p:pos,
+            n:new Date().toLocaleTimeString(),c:r.cost});
+        if(HI.length>50)HI.pop();
+        ls('hi',JSON.stringify(HI));
+        uSS();
+
+    }catch(e){
+        act.textContent='❌';act.className='';
+        inf.textContent=e.message;
+        console.log('ОШИБКА:',e);
     }
-    window.speechSynthesis.speak(u);
+    btn.disabled=false;btn.textContent='📸 АНАЛИЗ';
 }
 
-function repeatSpeak(){if(lastAnswer)speak(lastAnswer);}
-
-if(window.speechSynthesis){
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
+function uSS(){
+    document.getElementById('sH').textContent=HP;
+    document.getElementById('sC').textContent=TS.toFixed(2)+'₽';
+    var f=0,r=0;for(var k in DB){if(DB[k].t==='FISH')f++;if(DB[k].t==='REG')r++;}
+    document.getElementById('sF').textContent=f;
+    document.getElementById('sR').textContent=r;
+    document.getElementById('sS').textContent=HP>0?(TT/HP).toFixed(1)+'s':'0s';
+    document.getElementById('hist').innerHTML=HI.map(function(i){
+        return '<div class="hi"><b>'+i.d+'</b>'+(i.p?' <span style="color:#4af">'+i.p+'</span>':'')+
+        (i.s?' <span style="color:#fa0">'+i.s+'</span>':'')+
+        '<br>'+i.h+'<br>'+i.n+' | ⚡'+i.e+'s | '+i.c.toFixed(3)+'₽</div>';}).join('');
 }
 
-function toggleHistory(){
-    document.getElementById('historyPanel').classList.toggle('open');
-    renderHistory();
+function reset(){
+    if(!confirm('Сбросить всё?'))return;
+    TS=HP=TT=0;HI=[];DB={};HAND=[];
+    ['ts','hp','tt','hi','db'].forEach(function(k){localStorage.removeItem(k)});
+    uSS();rP();uMem();
+    document.getElementById('action').textContent='Наведи камеру 📸';
+    document.getElementById('action').className='';
+    document.getElementById('cards').textContent='';
+    document.getElementById('street').textContent='';
 }
 
-function renderHistory(){
-    var list=document.getElementById('historyList');
-    if(!hist.length){list.innerHTML='<p style="text-align:center;color:#666;padding:40px">Пусто</p>';return;}
-    var html='';
-    for(var i=hist.length-1;i>=0;i--){
-        var h=hist[i];
-        html+='<div class="histItem">'+
-            '<div class="time">'+h.time+' | ⚡'+h.elapsed+'s | 💰'+h.cost+'₽</div>'+
-            '<div class="msg">'+h.answer.replace(/</g,'&lt;')+'</div></div>';
-    }
-    list.innerHTML=html;
-}
-
-document.addEventListener('keydown',function(e){
-    if(e.code==='Space'&&!document.getElementById('settingsPanel').classList.contains('open')){
-        e.preventDefault();snap();
-    }
-});
+init();
 </script>
 </body>
 </html>
