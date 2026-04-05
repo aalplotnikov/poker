@@ -61,7 +61,7 @@ async function test(){
                     role:'user',
                     content:[
                         {type:'text',text:'Что на картинке? Ответь кратко.'},
-                        {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b64}}
+                        {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b64,detail:'low'}}
                     ]
                 }],
                 max_tokens:200
