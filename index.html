@@ -60,10 +60,11 @@ canvas{display:none}
 <h1>🤖 Покер Агент</h1>
 <p style="color:#888;margin:10px 0">Ручной режим с памятью руки</p>
 <select id="mSel">
-<option value="openai/gpt-5-nano" selected>⚡ GPT-5 Nano (быстрый+дешёвый)</option>
-<option value="openai/gpt-4o-mini">🔵 GPT-4o-mini</option>
+<option value="google/gemini-2.5-flash-preview" selected>⚡ Gemini 2.5 Flash (лучший vision)</option>
 <option value="google/gemini-3-flash-preview">🔥 Gemini 3 Flash</option>
-<option value="google/gemini-2.5-flash-preview">⚡ Gemini 2.5 Flash</option>
+<option value="nvidia/nemotron-nano-12b-v2-vl">🟢 Nemotron 12B VL</option>
+<option value="openai/gpt-4o-mini">🔵 GPT-4o-mini</option>
+<option value="openai/gpt-5-nano">🧠 GPT-5 Nano (reasoning)</option>
 <option value="openai/gpt-4o">🟣 GPT-4o</option>
 </select>
 <input type="password" id="kIn" placeholder="Polza.ai API ключ">
@@ -85,6 +86,7 @@ canvas{display:none}
 <div id="memory"></div>
 <div id="info"></div>
 <button id="goBtn" onclick="go()">📸 АНАЛИЗ</button>
+<button id="autoBtn" onclick="toggleAuto()" style="background:#333;color:#fa0;font-size:14px;padding:12px 30px">▶ АВТО (5с)</button>
 <button id="newHand" onclick="newHand()">🔄 НОВАЯ РУКА</button>
 <div id="total"></div>
 </div>
@@ -105,22 +107,23 @@ canvas{display:none}
 </div>
 <canvas id="cvs"></canvas>
 <script>
-var G={m:ls('m')||'openai/gpt-5-nano',k:ls('k')||''};
+var G={m:ls('m')||'google/gemini-2.5-flash-preview',k:ls('k')||''};
 var HI=jp('hi')||[],TS=+ls('ts')||0,HP=+ls('hp')||0,TT=+ls('tt')||0;
 var DB=jp('db')||{};
 var HAND=[];
+var autoTimer=null,autoOn=false;
 var vid=document.getElementById('vid'),cvs=document.getElementById('cvs');
 
 function ls(k,v){if(v!==undefined)localStorage.setItem(k,v);return localStorage.getItem(k)}
 function jp(k){try{return JSON.parse(ls(k))}catch(e){return null}}
 
-var REASONING_MODELS=['openai/gpt-5-nano','openai/o4-mini','openai/o3','openai/o3-mini','openai/o1','openai/o1-mini'];
-
-function isReasoning(model){
-    for(var i=0;i<REASONING_MODELS.length;i++){
-        if(model===REASONING_MODELS[i])return true;
-    }
-    return false;
+function isReasoning(m){
+    return m.indexOf('gpt-5')!==-1||
+           m.indexOf('o4-')!==-1||
+           m.indexOf('o3-')!==-1||
+           m.indexOf('o1-')!==-1||
+           (m.indexOf('/o3')!==-1&&m.indexOf('o3-')!==-1)||
+           (m.indexOf('/o1')!==-1&&m.indexOf('o1-')!==-1);
 }
 
 var SYS=`Ты покерный помощник. Анализируй скриншот PokerOK.
@@ -137,12 +140,6 @@ var SYS=`Ты покерный помощник. Анализируй скрин
 
 ШАГ 3 — НАЙДИ ПОЗИЦИЮ ГЕРОЯ:
 Кнопка "D" стоит у ОДНОГО игрока — он BTN.
-ВАЖНО: "D" может быть НЕ у героя! Смотри ГДЕ стоит "D":
-- "D" у героя внизу → герой BTN
-- "D" справа от героя → герой SB
-- "D" через 2 вправо → герой BB
-- "D" слева от героя → герой CO
-- "D" далеко → герой UTG/MP/HJ
 По часовой от D: BTN→SB→BB→UTG→UTG1→MP→MP2→HJ→CO
 
 ШАГ 4 — ДЕЙСТВИЕ:
@@ -154,32 +151,23 @@ var SYS=`Ты покерный помощник. Анализируй скрин
 
 ПРЕФЛОП ОТКРЫТИЕ (никто не рейзил) РЕЙЗ 2.5ББ:
 UTG: 77+, AJs+, KQs, AQo+
-UTG1: 66+, ATs+, KQs, KJs, QJs, AQo+, KQo
 MP: 55+, A9s+, KTs+, QTs+, JTs, T9s, AJo+, KQo
 HJ: 33+, A2s+, K5s+, Q8s+, J8s+, T8s+, 97s+, 87s, 76s, 65s, A9o+, KTo+, QTo+, JTo
 CO: 22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A2o+, K9o+, Q9o+, J9o+, T9o
 BTN: 22+, A2s+, K2s+, Q2s+, J4s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 97o+, 87o
 SB: 22+, A2s+, K2s+, Q4s+, J7s+, T7s+, 96s+, 86s+, A2o+, K7o+, Q9o+, J9o+
-s=suited o=offsuit
 
 VS РЕЙЗ: 3-бет AA-QQ,AK. Колл пары,suited коннекторы в позиции. Фолд мусор.
-BB VS РЕЙЗ: колл широко, 3-бет AA-QQ,AK.
 
 ПОСТФЛОП:
-Нет ставки → ФОЛД НЕЛЬЗЯ! ЧЕК или БЕТ!
 Топ пара+, сет → БЕТ 50-75% пота
 Дро → БЕТ 33%
-Средняя → ЧЕК
 Воздух → ЧЕК, фолд на чужой бет
 
 МАСТИ: ♠♥♦♣
 
-ЗАПРЕЩЕНО задавать вопросы!
-ЗАПРЕЩЕНО рассуждать!
-ЗАПРЕЩЕНО объяснять!
-
-ОТВЕТ СТРОГО 3 СТРОКИ И НИЧЕГО БОЛЬШЕ:
-РУКА: [2 карты героя] | БОРД: [карты/нет] | [позиция]
+ОТВЕТ СТРОГО 3 СТРОКИ:
+РУКА: [карты] | БОРД: [карты/нет] | [позиция]
 [ФОЛД/КОЛЛ/РЕЙЗ ХББ/БЕТ ХББ/ЧЕК]
 ИГРОКИ: [ник=FISH/REG/UNKNOWN]`;
 
@@ -188,10 +176,8 @@ function mkCtx(){
     var n=Object.keys(DB);
     if(n.length>0){k+='\nИзвестные:';for(var x of n)k+=' '+x+'='+DB[x].t;}
     if(HAND.length>0){
-        k+='\n\nТЕКУЩАЯ РУКА (история):';
-        for(var i=0;i<HAND.length;i++){
-            k+='\nУлица '+(i+1)+': '+HAND[i].cards+' → '+HAND[i].action;
-        }
+        k+='\n\nТЕКУЩАЯ РУКА:';
+        for(var i=0;i<HAND.length;i++)k+='\nУлица '+(i+1)+': '+HAND[i].cards+' → '+HAND[i].action;
         k+='\nНовая улица. Учитывай историю!';
     }
     return k+'\nАнализируй скриншот. ТОЛЬКО 3 СТРОКИ!';
@@ -240,22 +226,21 @@ async function cam(){
 
 function snap(){
     var vw=vid.videoWidth,vh=vid.videoHeight;
-    var cropTop=Math.round(vh*0.25);
-    var cropH=Math.round(vh*0.5);
-    var maxW=512;
+    if(!vw)return null;
+    var maxW=640;
     var scale=Math.min(maxW/vw,1);
     var outW=Math.round(vw*scale);
-    var outH=Math.round(cropH*scale);
+    var outH=Math.round(vh*scale);
     cvs.width=outW;cvs.height=outH;
-    cvs.getContext('2d').drawImage(vid,0,cropTop,vw,cropH,0,0,outW,outH);
-    return cvs.toDataURL('image/jpeg',0.5).split(',')[1];
+    cvs.getContext('2d').drawImage(vid,0,0,outW,outH);
+    return cvs.toDataURL('image/jpeg',0.6).split(',')[1];
 }
 
 async function api(b){
     var ms=[];
     ms.push({role:'system',content:SYS});
     ms.push({role:'user',content:[{type:'text',text:mkCtx()},
-    {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}]});
+    {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'high'}}]});
 
     var body={model:G.m,messages:ms,temperature:0.1};
 
@@ -263,7 +248,7 @@ async function api(b){
         body.max_tokens=16000;
         body.reasoning={effort:'minimal',exclude:true};
     }else{
-        body.max_tokens=150;
+        body.max_tokens=200;
     }
 
     var r=await fetch('https://polza.ai/api/v1/chat/completions',{
@@ -275,10 +260,9 @@ async function api(b){
     if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
     if(!d.choices||!d.choices[0])throw new Error('Пустой ответ');
     var content=d.choices[0].message.content||'';
-    if(!content.trim())throw new Error('Пустой content (reasoning съел токены — попробуй другую модель)');
+    if(!content.trim())throw new Error('Пустой content — попробуй другую модель');
     var u=d.usage||{};
-    return{txt:content.trim(),
-    cost:u.cost_rub||u.cost||0,tok:u.total_tokens||0};
+    return{txt:content.trim(),cost:u.cost_rub||u.cost||0,tok:u.total_tokens||0};
 }
 
 function pP(a){
@@ -305,8 +289,7 @@ function speak(text){
 }
 
 function newHand(){
-    HAND=[];
-    uMem();
+    HAND=[];uMem();
     document.getElementById('action').textContent='Новая рука 🃏';
     document.getElementById('action').className='';
     document.getElementById('cards').textContent='';
@@ -320,6 +303,24 @@ function uMem(){
     el.innerHTML=HAND.map(function(h,i){
         return '<div class="mem"><b>Улица '+(i+1)+':</b> '+h.cards+' → '+h.action+'</div>';
     }).join('');
+}
+
+function toggleAuto(){
+    autoOn=!autoOn;
+    var btn=document.getElementById('autoBtn');
+    if(autoOn){
+        btn.textContent='⏸ СТОП';btn.style.background='#4f4';btn.style.color='#000';
+        autoLoop();
+    }else{
+        btn.textContent='▶ АВТО (5с)';btn.style.background='#333';btn.style.color='#fa0';
+        clearTimeout(autoTimer);
+    }
+}
+
+async function autoLoop(){
+    if(!autoOn)return;
+    try{await go();}catch(e){}
+    if(autoOn)autoTimer=setTimeout(autoLoop,5000);
 }
 
 function rP(){
@@ -353,7 +354,9 @@ async function go(){
     act.textContent='⏳';act.className='';
     crd.textContent='';strt.textContent='';inf.textContent='';
     try{
-        var b=snap(),t0=Date.now();
+        var b=snap();
+        if(!b)throw new Error('Нет видео');
+        var t0=Date.now();
         var r=await api(b);
         var a=r.txt,el=((Date.now()-t0)/1000).toFixed(1);
         TS+=r.cost;TT+=+el;
