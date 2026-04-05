@@ -3,91 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Тест GPT-5 Nano</title>
+<title>Тест 3в1</title>
 <style>
-body{background:#111;color:#fff;font-family:Arial;text-align:center;padding:20px}
-video{width:90%;max-width:400px;border-radius:10px;margin:10px 0}
-button{background:#e94560;color:#fff;font-size:20px;padding:15px 40px;border:none;border-radius:12px;margin:10px;cursor:pointer}
-button:disabled{background:#555}
-#result{background:#1a1a3e;border-radius:10px;padding:15px;margin:15px auto;max-width:500px;text-align:left;white-space:pre-wrap;font-size:14px;min-height:50px}
-#info{color:#888;font-size:12px;margin:10px 0}
-input{width:80%;max-width:400px;padding:12px;border-radius:10px;border:1px solid #333;background:#1a1a3e;color:#fff;font-size:16px;margin:5px 0}
+body{background:#111;color:#fff;font-family:Arial;text-align:center;padding:15px}
+video{width:80%;max-width:350px;border-radius:10px;margin:10px 0}
+button{background:#e94560;color:#fff;font-size:16px;padding:12px 30px;
+border:none;border-radius:10px;margin:5px;cursor:pointer;display:block;width:90%;max-width:350px;margin:5px auto}
+input{width:80%;padding:12px;border-radius:10px;border:1px solid #333;
+background:#1a1a3e;color:#fff;font-size:16px;margin:5px 0}
+#r{background:#1a1a3e;border-radius:10px;padding:15px;margin:10px auto;
+max-width:500px;text-align:left;white-space:pre-wrap;font-size:13px;min-height:80px}
 canvas{display:none}
 </style>
 </head>
 <body>
-<h2>🧪 Тест GPT-5 Nano + Картинка</h2>
-<input type="password" id="key" placeholder="Polza.ai API ключ">
-<br>
-<video id="vid" autoplay playsinline muted></video>
-<br>
-<button onclick="test()">📸 Отправить фото</button>
-<div id="info"></div>
-<div id="result">Ответ появится тут...</div>
-<canvas id="cvs"></canvas>
+<h2>🧪 Диагностика</h2>
+<input type="password" id="key" placeholder="API ключ">
+<video id="v" autoplay playsinline muted></video>
+<button onclick="test1()">1️⃣ Текст без фото (Nano)</button>
+<button onclick="test2()">2️⃣ Фото detail:low (Nano)</button>
+<button onclick="test3()">3️⃣ Фото detail:low (4o-mini)</button>
+<div id="r">Нажми любую кнопку...</div>
+<canvas id="c"></canvas>
 
 <script>
-var vid=document.getElementById('vid');
-var cvs=document.getElementById('cvs');
-
+var v=document.getElementById('v'),c=document.getElementById('c');
 navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-.then(function(s){vid.srcObject=s;})
-.catch(function(){alert('Разреши камеру');});
+.then(function(s){v.srcObject=s;});
 
-async function test(){
+function snap(){
+    c.width=256;c.height=192;
+    c.getContext('2d').drawImage(v,0,0,256,192);
+    return c.toDataURL('image/jpeg',0.4).split(',')[1];
+}
+
+async function send(model,msgs,label){
     var key=document.getElementById('key').value.trim();
-    if(!key){alert('Введи ключ!');return;}
-
-    var res=document.getElementById('result');
-    var inf=document.getElementById('info');
-    res.textContent='⏳ Отправляю...';
-    inf.textContent='';
-
-    // снимок
-    var vw=vid.videoWidth,vh=vid.videoHeight;
-    cvs.width=512;cvs.height=Math.round(vh*(512/vw));
-    cvs.getContext('2d').drawImage(vid,0,0,cvs.width,cvs.height);
-    var b64=cvs.toDataURL('image/jpeg',0.5).split(',')[1];
-
+    if(!key){alert('Ключ!');return;}
+    var r=document.getElementById('r');
+    r.textContent='⏳ '+label+'...\n';
     var t0=Date.now();
-
     try{
-        var r=await fetch('https://polza.ai/api/v1/chat/completions',{
+        var res=await fetch('https://polza.ai/api/v1/chat/completions',{
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
             body:JSON.stringify({
-                model:'openai/gpt-5-nano',
-                messages:[{
-                    role:'user',
-                    content:[
-                        {type:'text',text:'Что на картинке? Ответь кратко.'},
-                        {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b64,detail:'low'}}
-                    ]
-                }],
-                max_tokens:200
+                model:model,
+                messages:msgs,
+                max_tokens:300,
+                temperature:0.5
             })
         });
-
-        var d=await r.json();
+        var txt=await res.text();
         var el=((Date.now()-t0)/1000).toFixed(1);
+        console.log(label+' RAW:',txt);
 
-        console.log('ПОЛНЫЙ ОТВЕТ:',JSON.stringify(d,null,2));
+        var d;
+        try{d=JSON.parse(txt);}catch(e){
+            r.textContent='❌ Не JSON:\n'+txt;return;
+        }
 
         if(d.error){
-            res.textContent='❌ ОШИБКА:\n'+JSON.stringify(d.error,null,2);
-        } else if(d.choices && d.choices[0]){
-            var txt=d.choices[0].message.content;
-            var u=d.usage||{};
-            res.textContent='✅ ОТВЕТ:\n\n'+txt;
-            inf.textContent='⚡'+el+'s | Токены: '+(u.total_tokens||'?')+
-                ' | Стоимость: '+(u.cost_rub||u.cost||'?')+'₽';
-        } else {
-            res.textContent='❓ Странный ответ:\n'+JSON.stringify(d,null,2);
+            r.textContent='❌ ОШИБКА:\n'+JSON.stringify(d.error,null,2);
+            return;
         }
+
+        var answer='(пусто)';
+        if(d.choices && d.choices[0] && d.choices[0].message){
+            answer=d.choices[0].message.content||'(content пустой)';
+        }
+
+        var u=d.usage||{};
+        r.textContent=
+            '🏷 '+label+'\n'+
+            '📦 Модель: '+model+'\n'+
+            '⚡ Время: '+el+'s\n'+
+            '🔢 Токены: '+(u.total_tokens||'?')+
+            ' (in:'+(u.prompt_tokens||'?')+' out:'+(u.completion_tokens||'?')+')\n'+
+            '💰 Цена: '+(u.cost_rub||u.cost||'?')+'₽\n'+
+            '─────────────\n'+
+            '📝 ОТВЕТ:\n'+answer+'\n'+
+            '─────────────\n'+
+            'finish_reason: '+(d.choices&&d.choices[0]?d.choices[0].finish_reason:'?');
+
     }catch(e){
-        res.textContent='❌ Fetch ошибка:\n'+e.message;
-        console.log('ОШИБКА:',e);
+        r.textContent='❌ Fetch: '+e.message;
     }
+}
+
+function test1(){
+    send('openai/gpt-5-nano',[
+        {role:'user',content:'Скажи "привет я работаю". Только эти 3 слова.'}
+    ],'Тест 1: текст Nano');
+}
+
+function test2(){
+    var b=snap();
+    send('openai/gpt-5-nano',[
+        {role:'user',content:[
+            {type:'text',text:'Опиши что видишь одним предложением.'},
+            {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}
+        ]}
+    ],'Тест 2: фото Nano');
+}
+
+function test3(){
+    var b=snap();
+    send('openai/gpt-4o-mini',[
+        {role:'user',content:[
+            {type:'text',text:'Опиши что видишь одним предложением.'},
+            {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b,detail:'low'}}
+        ]}
+    ],'Тест 3: фото 4o-mini');
 }
 </script>
 </body>
